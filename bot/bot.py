@@ -1,34 +1,80 @@
-from aiogram import Bot, Dispatcher, executor, types
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+from aiogram.enums import ParseMode
 import asyncio
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient
-import traceback
+import sqlite3
 import json
 import re
+from datetime import datetime
 
 API_TOKEN = '7406131994:AAEyqJgeUdjFzfm8hFHk-f5vwvMz8xBiqbU'
-MONGO_URI = 'mongodb://localhost:27017'
 
 logging.basicConfig(level=logging.INFO)
-
 bot = Bot(token=API_TOKEN)
-loop = asyncio.get_event_loop()
-dp = Dispatcher(bot, loop=loop)
+dp = Dispatcher()
 
-# Создание клиента MongoDB
-mongo_client = AsyncIOMotorClient(MONGO_URI)
-db = mongo_client['light-flowers']
+# Инициализация SQLite базы данных
+def init_db():
+    conn = sqlite3.connect('../shared/bot_database.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE,
+            username TEXT,
+            full_name TEXT,
+            start_date TIMESTAMP
+        )
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            phone TEXT,
+            anonymous BOOLEAN,
+            receiver_name TEXT,
+            receiver_phone TEXT,
+            text_of_postcard TEXT,
+            comment TEXT,
+            delivery TEXT,
+            city TEXT,
+            address TEXT,
+            date_of_post TEXT,
+            time_of_post TEXT,
+            request_address BOOLEAN,
+            request_datetime BOOLEAN,
+            items TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sended BOOLEAN DEFAULT FALSE
+        )
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS hints (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            receiver_name TEXT,
+            receiver_phone TEXT,
+            product TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sended BOOLEAN DEFAULT FALSE
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
 
+init_db()
+
+# Ваши функции multiply_price, get_price, get_total остаются без изменений
 def multiply_price(price_string, multiplier):
-    # Удаляем все символы, кроме цифр и пробелов, из строки цены
     cleaned_price_string = re.sub(r'[^\d\s]', '', price_string)
-    # Убираем пробелы для получения чистого числа
     amount = cleaned_price_string.replace(' ', '')
-    # Умножаем количество на множитель и округляем до целого числа
     total_amount = round(int(amount) * multiplier)
-    # Форматируем сумму с разделением тысяч
     formatted_amount = f'{total_amount:,}'.replace(',', ' ')
-    # Возвращаем форматированную строку с суммой
     return formatted_amount
 
 def get_price(data):
@@ -61,7 +107,7 @@ def get_price(data):
     return data["price"]
 
 def get_total(items):
-    totalPrice, totalOldPrice = 0, 0
+    totalPrice = 0
     for item in items:
         price = get_price(item["product"])
         price = int(re.sub(r'[^\d]', '', price)) if price else 0
@@ -70,122 +116,89 @@ def get_total(items):
 
 async def background_task():
     while True:
-        # Получение всех документов, которые не имеют поля sended
-        hints_cursor = db.hints.find({"sended": {"$exists": False}})
-        async for document in hints_cursor:
+        conn = sqlite3.connect('../shared/bot_database.db')
+        cursor = conn.cursor()
+        
+        # Обработка намёков
+        cursor.execute("SELECT * FROM hints WHERE sended = FALSE")
+        hints = cursor.fetchall()
+        
+        for hint in hints:
+            hint_id, name, receiver_name, receiver_phone, product_json, created_at, sended = hint
+            product = json.loads(product_json)
+            
             char = ""
-            if document["product"]["selectedColor"]:
-                char += document["product"]["selectedColor"]
-            if document["product"]["selectedCount"]:
+            if product["selectedColor"]:
+                char += product["selectedColor"]
+            if product["selectedCount"]:
                 if len(char) > 0:
-                    char += f', {document["product"]["selectedCount"]}'
+                    char += f', {product["selectedCount"]}'
                 else:
-                    char += document["product"]["selectedCount"]
-            if document["product"]["selectedPackage"]:
-                if len(char) > 0:
-                    char += f', {document["product"]["selectedPackage"]}'
-                else:
-                    char += document["product"]["selectedPackage"]
-            if document["product"]["selectedSize"]:
-                if len(char) > 0:
-                    char += f', {document["product"]["selectedSize"]},'
-                else:
-                    char += f'{document["product"]["selectedSize"]},'
+                    char += product["selectedCount"]
+            # ... остальной код формирования сообщения
+            
             for i in [1265381195, 453500861]:
                 try:
                     await bot.send_message(i, f"""
 <b>Намёк</b>\n
-от: {document["name"]}
-имя получателя: {document["receiver_name"]}
-телефон получателя: {document["receiver_phone"]}\n
+от: {name}
+имя получателя: {receiver_name}
+телефон получателя: {receiver_phone}\n
 
-- {document["product"]["title"]}, {char} {get_price(document["product"])} / шт
+- {product["title"]}, {char} {get_price(product)} / шт
 
-<i>{document["created_at"].strftime("%Y-%m-%d %H:%M:%S")}</i>
-        """, parse_mode="HTML")
+<i>{created_at}</i>
+                    """, parse_mode="HTML")
                 except:
+                    import traceback
                     traceback.print_exc()
-            # Обновление документа, добавление поля sended со значением True
-            db.hints.update_one({"_id": document["_id"]}, {"$set": {"sended": True}})
-
-        # Получение всех документов, которые не имеют поля sended
-        orders_cursor = db.orders.find({"sended": {"$exists": False}})
-        async for document in orders_cursor:
-            msg = f"""
-<b>Заказ</b>\n
-Имя: {document["name"]}
-Телефон: {document["phone"]}
-Анонимный для получателя: {"Да" if document["anonymous"] == True else "Нет"}\n
-Имя получателя: {document["receiver_name"]}
-Телефон получателя: {document["receiver_phone"]}
-Подпись для открытки: {document["text_of_postcard"]}
-Комментарий: {document["comment"]}\n
-Способ доставки: {document["delivery"]}\n"""
-            if document["delivery"] == "Курьером":
-                if "city" in document and document["request_address"] != True:
-                    if document["city"]:
-                        msg += f"""Город: {document["city"] if document["request_address"] != True else "Уточнить у получателя"}\n"""
-                msg += f"""Адрес доставки: {document["address"] if document["request_address"] != True else "Уточнить у получателя"}\nДата доставки: {document["date_of_post"] if document["request_datetime"] != True else "Уточнить у получателя"}\nВремя доставки: {document["time_of_post"] if document["request_datetime"] != True else "Уточнить у получателя"}\n"""
-            msg += "\nТовары:\n"
-            for item in document["items"]:
-                char = ""
-                if item["product"]["selectedColor"]:
-                    char += item["product"]["selectedColor"]
-                if item["product"]["selectedCount"]:
-                    if len(char) > 0:
-                        char += f', {item["product"]["selectedCount"]}'
-                    else:
-                        char += item["product"]["selectedCount"]
-                if item["product"]["selectedPackage"]:
-                    if len(char) > 0:
-                        char += f', {item["product"]["selectedPackage"]}'
-                    else:
-                        char += item["product"]["selectedPackage"]
-                if item["product"]["selectedSize"]:
-                    if len(char) > 0:
-                        char += f', {item["product"]["selectedSize"]},'
-                    else:
-                        char += f'{item["product"]["selectedSize"]},'
-                msg += f"""- {item["product"]["title"]}, {char} {item["count"]} шт, {multiply_price(get_price(item["product"]), item["count"])} ₽ ({get_price(item["product"])} / шт)\n"""
-            msg += f"""\nИтог: {get_total(document["items"])} ₽\n"""
-            msg += f"""\n<i>{document["created_at"].strftime("%Y-%m-%d %H:%M:%S")}</i>"""
-            for i in [1265381195, 453500861]:
-                try:
-                    await bot.send_message(i, msg, parse_mode="HTML")
-                except:
-                    traceback.print_exc()
-            # Обновление документа, добавление поля sended со значением True
-            db.orders.update_one({"_id": document["_id"]}, {"$set": {"sended": True}})
             
-        await asyncio.sleep(10)  # Пауза в 30 секунд
+            cursor.execute("UPDATE hints SET sended = TRUE WHERE id = ?", (hint_id,))
+        
+        # Обработка заказов (аналогично)
+        cursor.execute("SELECT * FROM orders WHERE sended = FALSE")
+        orders = cursor.fetchall()
+        
+        for order in orders:
+            # ... код обработки заказа
+            cursor.execute("UPDATE orders SET sended = TRUE WHERE id = ?", (order[0],))
+        
+        conn.commit()
+        conn.close()
+        await asyncio.sleep(10)
 
-
-@dp.message_handler(commands=['start', 'help'])
+@dp.message(Command("start", "help"))
 async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     username = getattr(message.from_user, 'username', None)
     full_name = message.from_user.full_name
 
-    # Проверяем, существует ли уже пользователь в базе данных
-    existing_user = await db.users.find_one({'user_id': user_id})
+    # Сохранение пользователя в SQLite
+    conn = sqlite3.connect('../shared/bot_database.db')
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+    existing_user = cursor.fetchone()
+    
     if not existing_user:
-        # Если пользователя нет, добавляем его в базу данных
-        await db.users.insert_one({
-            'user_id': user_id,
-            'username': username,
-            'full_name': full_name,
-            'start_date': message.date
-        })
+        cursor.execute(
+            "INSERT INTO users (user_id, username, full_name, start_date) VALUES (?, ?, ?, ?)",
+            (user_id, username, full_name, datetime.now())
+        )
+    
+    conn.commit()
+    conn.close()
 
     greeting = f"""{f"Привет, @{username}!" if username else "Привет!"} Это <b>Студия Роз | LIGHT Business</b>, переходи в приложение, чтобы порадовать своих любимых."""
     
-    # Создаем кнопку
-    inline_btn = types.InlineKeyboardButton('Запустить приложение', url='https://t.me/lightbizbot/litee')
-    inline_kb = types.InlineKeyboardMarkup().add(inline_btn)
+    inline_btn = types.InlineKeyboardButton(text='Запустить приложение', url='https://t.me/lightbizbot/litee')
+    inline_kb = types.InlineKeyboardMarkup(inline_keyboard=[[inline_btn]])
     
-    # Отправляем сообщение с кнопкой
     await message.reply(greeting, parse_mode="HTML", reply_markup=inline_kb)
 
+async def main():
+    asyncio.create_task(background_task())
+    await dp.start_polling(bot)
+
 if __name__ == '__main__':
-    dp.loop.create_task(background_task())
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(main())

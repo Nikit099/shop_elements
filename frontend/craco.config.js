@@ -8,11 +8,7 @@ module.exports = {
     },
   },
   devServer: {
-    port: 80,
+    port: 8080,
     host: "127.0.0.1",
-    https: {
-      key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-      cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
-    },
   },
 };

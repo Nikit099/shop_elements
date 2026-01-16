@@ -6,7 +6,7 @@ import { useMainContext } from '../context';
 import { useSpringRef, animated, useSpring } from '@react-spring/web';
 
 function Main() {
-  const { sendMessage, message, setMessage, theme, setTheme } = useMainContext();
+  const { sendMessage, message, setMessage, theme, setTheme, businessId } = useMainContext();
   const wrapperApi = useSpringRef();
   const wrapperProps = useSpring({
     ref: wrapperApi,
@@ -33,12 +33,24 @@ function Main() {
       e.currentTarget.classList.add('active');
     }
   };
+
   useEffect(() => {
+    if (!businessId) {   
+          setPosts([]);
+          return; 
+         }
     window.scrollTo({top: 0, smooth: "behavior"});
-    sendMessage(JSON.stringify(["cards", "filter", {"category": "Розы с любовью"}, 6]));
-  }, [])
+    const filters = {"category": "Розы с любовью" }
+    if (businessId){
+      filters["business_id"] = businessId
+    }
+    sendMessage(JSON.stringify(["cards", "filter", filters, 6]));
+  }, [businessId])
+
   useEffect(() => {
-    if (message && window.location.pathname === "/") {
+    
+    if (message && window.location.pathname === `/${businessId}`) {
+      console.log(message)
       if (message[0] === 'cards') {
         if (message[1] === 'filter') {
           setPosts(prevState => [...prevState, ...message[2].filter(item => {
@@ -182,7 +194,7 @@ function Main() {
         }
       </div>
       {posts.length > 0 &&
-      <div style={{marginTop: 15, display: "flex", justifyContent: "center", color: theme === "Dark" ? "#666" : "#bbb", fontWeight: 300, fontSize: 15, alignItems: "center", gap: 8}} onClick={() => navigate("/search")}>
+      <div style={{marginTop: 15, display: "flex", justifyContent: "center", color: theme === "Dark" ? "#666" : "#bbb", fontWeight: 300, fontSize: 15, alignItems: "center", gap: 8}} onClick={() => navigate(`/${businessId}/search`)}>
         Показать всё <img src={require("../components/images/arrow-right.svg").default} alt="" style={{display: "flex", marginTop: 1, filter: theme === "Dark" ? "brightness(0.5)" : "brightness(.6)"}} />
       </div>}
       <div className={styles.information}>

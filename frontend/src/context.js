@@ -11,7 +11,7 @@ const SocketProvider = ({ children }) => {
   const [ state, setState ] = useState(null);
   const [ loading, setLoading ] = useState(true);
   const [ error, setError ] = useState(null);
-
+  const [businessId, setBusinessId] = useState(null)
   const [ account, setAccount ] = useState(window.Telegram.WebApp.initDataUnsafe);
   const [ accessToken, setAccessToken ] = useState(localStorage.getItem('accessToken'));
   const [ refreshToken, setRefreshToken ] = useState(localStorage.getItem('refreshToken'));
@@ -66,6 +66,19 @@ const SocketProvider = ({ children }) => {
     }
   }, [socket]);
 
+    useEffect(() => {
+  const pathParts = window.location.pathname.split('/');
+  // В нашей структуре /:bId/search или /:bId/card/1...
+  // Первым элементом после слеша всегда будет ID бизнеса
+  const bId = pathParts[1]; 
+  
+  if (bId && bId !== "card" && bId !== "cart") { // Проверка, что это UUID, а не корень
+    setBusinessId(bId);
+    localStorage.setItem('businessId', bId);
+    console.log("Business ID установлен:", bId);
+  }
+}, [window.location.pathname]);
+
   useEffect(() => {
     if (socket) {
       socket.on('connect', () => {
@@ -85,7 +98,14 @@ const SocketProvider = ({ children }) => {
       };
     }
   }, [socket]);
-
+  
+//   const navigateTo = (path) => {
+//   if (businessId) {
+//     navigate(`/${businessId}${path}`);
+//   } else {
+//     navigate(path);
+//   }
+// };
   useEffect(() => {
     if (!message) {
       if (messages.length > 0) {
@@ -153,7 +173,9 @@ const SocketProvider = ({ children }) => {
 
                                      error,
                                      setError,
-                                     
+                                     businessId,
+                                     setBusinessId,
+                                    //  navigateTo,
                                      theme, setTheme}}>
       {children}
     </SocketContext.Provider>

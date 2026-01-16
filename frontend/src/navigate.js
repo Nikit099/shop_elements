@@ -28,12 +28,13 @@ const Navigate = () => {
     !loading ?
       <div>
         <Routes>
-          <Route path="/" element={<Main />} />
-          <Route path="/add" element={<Add />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/card/:id" element={<CardRoute />} />
-          <Route path="/edit/:id" element={<Edit />} />
+          <Route path="/:bId" element={<Main />} />
+          <Route path="/:bId/add" element={<Add />} />
+          <Route path="/:bId/cart" element={<Cart />} />
+          <Route path="/:bId/search" element={<Search />} />
+          <Route path="/:bId/card/:id" element={<CardRoute />} />
+          <Route path="/:bId/edit/:id" element={<Edit />} />
+          <Route path="/" element={<div className="view">Магазин не найден</div>} />
         </Routes>
         <FixedButton />
       </div>

@@ -11,7 +11,7 @@ function Search() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const cardId = params.get('card_id');
-  const { sendMessage, message, setMessage, theme, setTheme } = useMainContext();
+  const { sendMessage, message, setMessage, theme, setTheme, businessId } = useMainContext();
   const navigate = useNavigate();
   const [ view, setView ] = useState("grid");
   const [ sortBy, setSortBy ] = useState("Сначала популярные");
@@ -59,7 +59,7 @@ function Search() {
   ]
   const [ selectedCategory, setSelectedCategory ] = useState("Розы с любовью");
   useEffect(() => {
-    if (message && window.location.pathname === "/search") {
+    if (message && window.location.pathname === `/${businessId}/search`) {
       if (message[0] === 'cards') {
         if (message[1] === 'filter') {
           setPosts(prevState => [...prevState, ...message[2].filter(item => {

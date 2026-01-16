@@ -17,14 +17,24 @@ load_dotenv()
 # Инициализация Supabase
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+print(f"DEBUG: Supabase URL: {SUPABASE_URL}")
+print(f"DEBUG: Supabase Key present: {'Yes' if SUPABASE_KEY else 'No'}")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def compress_image(image_data, max_size, quality):
-    """Сжатие изображения"""
+def compress_image_to_bytes(image_data, max_size, quality):
+    """Конвертирует любое изображение в WebP и сжимает"""
     image = Image.open(BytesIO(image_data))
+    
+    # Для WebP лучше оставить RGBA, если есть прозрачность, 
+    # но для цветов обычно прозрачность не нужна, так что RGB ок.
+    if image.mode in ("RGBA", "P"):
+        image = image.convert("RGB")
+    
     image.thumbnail(max_size, Image.LANCZOS)
     img_byte_arr = BytesIO()
-    image.save(img_byte_arr, format='JPEG', quality=quality)
+    
+    # Сохраняем именно в формате WEBP
+    image.save(img_byte_arr, format='WEBP', quality=quality, method=6) # method 6 - лучшее сжатие
     return img_byte_arr.getvalue()
 
 def prepare_data(data):
@@ -68,16 +78,21 @@ def handle_message(message):
     try:
         if message[0] == "cards":
             if message[1] == "filter":
-                filters = message[2] if message[2] else {}
-                limit = message[3]
-                order_type = message[4]
-                price_range = message[5] if message[5] and len(message[5]) >= 2 else None
                 
+                filters = message[2] if len(message) > 2 and message[2] else {}
+                limit = message[3] if len(message) > 3 else None
+    
+                # Безопасно достаем параметры, которых может не быть в коротком запросе
+                order_type = message[4] if len(message) > 4 else None
+                price_range = message[5] if len(message) > 5 and message[5] and len(message[5]) >= 2 else None
                 # Базовый запрос
+                
                 query = supabase.table('cards').select('*')
                 
                 # Применение фильтров
                 for key, value in filters.items():
+                    db_key = 'id' if key == '_id' else key
+                    
                     if isinstance(value, list) and value:
                         query = query.in_(key, value)
                     else:
@@ -114,7 +129,14 @@ def handle_message(message):
                         .execute()
                     card['images'] = images_response.data
                     card['_id'] = card['id']
-                
+                       # 2. ДОБАВИТЬ ЭТУ ЧАСТЬ: Превращаем строки из БД обратно в списки для фронта
+                    list_fields = ['colors', 'counts', 'packages', 'sizes' ]
+                    for field in list_fields:
+                        if field in card and isinstance(card[field], str):
+                            try:
+                                card[field] = json.loads(card[field])
+                            except:
+                                card[field] = [] # Если там пусто, отдаем пустой список
                 emit('message', json.dumps(['cards', 'filter', cards, message[2], message[3]]))
                 
             elif message[1] == "create":
@@ -122,6 +144,7 @@ def handle_message(message):
                 price_number = int(card_data['price'].replace(' ', '').replace('₽', '')) if 'price' in card_data else 0
                 
                 data = {
+                    'category': card_data.get('category'),
                     'title': card_data.get('title'),
                     'description': card_data.get('description'),
                     'price': card_data.get('price'),
@@ -144,6 +167,7 @@ def handle_message(message):
                 price_number = int(card_data['price'].replace(' ', '').replace('₽', '')) if 'price' in card_data else 0
                 
                 data = {
+                    'category': card_data.get('category'),
                     'title': card_data.get('title'),
                     'description': card_data.get('description'),
                     'price': card_data.get('price'),

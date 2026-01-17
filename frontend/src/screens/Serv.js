@@ -12,7 +12,7 @@ function Serv() {
 
   const navigate = useNavigate();
   const { id } = useParams();
-  const { sendMessage, setMessage, message } = useMainContext();
+  const { sendMessage, setMessage, message, businessId } = useMainContext();
   const [ view, setView ] = useState("grid");
   const [ items, setItems ] = useState([]);
 
@@ -115,7 +115,7 @@ function Serv() {
       {view === "grid" &&
         <div className={styles.line}>
           {items.map((item, index) => (
-          <div className={styles.cellMiddle} key={index} onClick={() => navigate('/posts/' + item._id)}>
+          <div className={styles.cellMiddle} key={index} onClick={() => navigate(`/${businessId}/posts/`+ item._id)}>
             <div className={styles.image}>
               {item.images &&
                 <LazyLoadImage

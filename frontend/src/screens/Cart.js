@@ -59,7 +59,7 @@ function Cart() {
         { name: "receiver_name" },
         { name: "receiver_phone" },
     ]))
-    const { cartItems, setCartItems, sendMessage, message, setMessage } = useMainContext();
+    const { cartItems, setCartItems, sendMessage, message, setMessage, businessId } = useMainContext();
     const [ inputs, setInputs ] = useState({
         "delivery": {
             value: "Курьером",
@@ -314,7 +314,7 @@ function Cart() {
             setTimeout(() => {
                 setSended(false);
                 setCartItems([]);
-                navigate("/");
+                navigate(`/${businessId}` );
             }, 6000)
         }
     }, [sended])
@@ -331,7 +331,7 @@ function Cart() {
     const [ posts, setPosts ] = useState([]);
     useEffect(() => {
         console.log(message);
-        if (message && window.location.pathname === '/cart') {
+        if (message && window.location.pathname ===`/${businessId}/cart`) {
           if (message[0] === 'cards') {
             if (message[1] === 'filter') {
               setPosts(prevState => [...prevState, ...message[2].filter(item => {
@@ -516,7 +516,7 @@ function Cart() {
                 {sended && <SendedHover handleClose={() => {
                     setSended(false);
                     setCartItems([]);
-                    navigate("/");
+                    navigate(`/${businessId}`);
                 }}/>}
             </div>
         );
@@ -533,7 +533,7 @@ function Cart() {
             }}>
                 <div style={{fontSize: 18, fontWeight: 300, color: "#bbb"}}>Ваша корзина пустая</div>
                 <div>
-                    <Button text={"Выбрать букет"} small={true} handleClick={() => navigate("/search", {replace: true})} style={{
+                    <Button text={"Выбрать букет"} small={true} handleClick={() => navigate(`/${businessId}/search` , {replace: true})} style={{
                         fontWeight: 500, 
                         fontSize: 16,
                         borderRadius: 12,

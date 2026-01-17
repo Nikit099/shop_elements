@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const width = window.innerWidth - 20;
 const height = (window.innerWidth - 27.1) * 410 / 564;
 
-function CarView({ onlyView, carId, damages }) {
+function CarView({ onlyView, carId, damages, businessId}) {
   const navigate = useNavigate();
 
   const shapeRef = useRef(null);
@@ -24,7 +24,7 @@ function CarView({ onlyView, carId, damages }) {
           go = `/edit-damage?id=${damage._id}&type=${damage.type}`;
         };
       })
-      navigate(go);
+      navigate(`/${businessId}` + go);
     };
 
   };

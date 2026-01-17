@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useMainContext } from './context';
 
 import FixedButton from './components/FixedButton';
-
+import {  useNavigate, Navigate as RouterNavigate } from 'react-router-dom';
 import Main from './screens/Main';
 import Loading from './screens/Loading';
 
@@ -16,7 +16,7 @@ import CardRoute from './components/CardRoute';
 const Navigate = () => {
 
   const { loading } = useMainContext();
-
+  const navigate = useNavigate();
   useEffect(() => {
     window.Telegram.WebApp.ready()
     window.Telegram.WebApp.expand();
@@ -24,23 +24,26 @@ const Navigate = () => {
     window.Telegram.WebApp.disableVerticalSwipes();
   }, [window.Telegram.WebApp])
 
-  return (
-    !loading ?
-      <div>
-        <Routes>
-          <Route path="/:bId" element={<Main />} />
-          <Route path="/:bId/add" element={<Add />} />
-          <Route path="/:bId/cart" element={<Cart />} />
-          <Route path="/:bId/search" element={<Search />} />
-          <Route path="/:bId/card/:id" element={<CardRoute />} />
-          <Route path="/:bId/edit/:id" element={<Edit />} />
-          <Route path="/" element={<div className="view">Магазин не найден</div>} />
-        </Routes>
-        <FixedButton />
-      </div>
-    :
-      <Loading />
-  );
+return (
+  !loading ?
+    <div>
+      <Routes>
+        <Route path="/" element={
+          <RouterNavigate to={`/${localStorage.getItem('businessId') || 'default'}`} replace />
+        } />
+        <Route path="/:bId" element={<Main />} />
+        <Route path="/:bId/add" element={<Add />} />
+        <Route path="/:bId/cart" element={<Cart />} />
+        <Route path="/:bId/search" element={<Search />} />
+        <Route path="/:bId/card/:id" element={<CardRoute />} />
+        <Route path="/:bId/edit/:id" element={<Edit />} />
+        <Route path="*" element={<RouterNavigate to={`/${localStorage.getItem('businessId') || 'default'}`} replace />} />
+      </Routes>
+      <FixedButton />
+    </div>
+  :
+    <Loading />
+);
 };
 
 export default Navigate;

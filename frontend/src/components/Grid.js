@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import GosNumber from '../components/GosNumber';
 
 
-function Grid({ items: initialItems, navigate }) {
+function Grid({ items: initialItems, navigate, businessId }) {
 
   const [ items, setItems ] = useState([]);
 
@@ -54,7 +54,7 @@ function Grid({ items: initialItems, navigate }) {
           {(l.length > 0 && l.length === 3) &&
           <div className={styles.line}>
             {l.map((item, index) => (
-            <div className={styles.cellSmall} onClick={() => navigate('/posts/' + item._id)} key={item._id}>
+            <div className={styles.cellSmall} onClick={() => navigate( `/${businessId}/posts/` + item._id)} key={item._id}>
               <div className={styles.image}>
                 {item.images &&
                 <LazyLoadImage
@@ -75,7 +75,7 @@ function Grid({ items: initialItems, navigate }) {
           {(l.length > 0 && l.length === 1) &&
           <div>
             {l.map((item, index) => (
-            <div className={styles.cellBig} onClick={() => navigate('/posts/' + item._id)} key={item._id}>
+            <div className={styles.cellBig} onClick={() => navigate(`/${businessId}/posts/` +  item._id)} key={item._id}>
               <div className={styles.image}>
                 {item.images &&
                 <LazyLoadImage
@@ -96,7 +96,7 @@ function Grid({ items: initialItems, navigate }) {
           {(l.length > 0 && l.length === 2) &&
           <div className={styles.line}>
             {l.map((item, index) => (
-            <div className={styles.cellMiddle} onClick={() => navigate('/posts/' + item._id)} key={item._id}>
+            <div className={styles.cellMiddle} onClick={() => navigate(`/${businessId}/posts/` + item._id)} key={item._id}>
               <div className={styles.image}>
                 {item.images &&
                 <LazyLoadImage

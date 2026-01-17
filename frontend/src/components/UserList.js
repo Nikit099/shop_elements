@@ -2,7 +2,7 @@ import styles from './styles/UserList.module.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function UserList({ items }) {
+function UserList({ items, businessId }) {
 
   const navigate = useNavigate();
 
@@ -10,7 +10,7 @@ function UserList({ items }) {
     <div className={styles.list}>
       <div className={styles.items}>
         {items.map((user) => (
-        <div className={styles.item} key={user._id} onClick={() => navigate("/users/" + user._id)}>
+        <div className={styles.item} key={user._id} onClick={() => navigate(`/${businessId}/users/` + user._id)}>
             <div className={styles.avatar}>
                 <img src={user.avatar || require("./images/non-avatar.svg").default} alt="" />
             </div>

@@ -16,7 +16,7 @@ function Post() {
 
   const navigate = useNavigate();
   const { id } = useParams();
-  const { message, setMessage, sendMessage, posts } = useMainContext();
+  const { message, setMessage, sendMessage, posts, businessId } = useMainContext();
   const imagesDivRef = useRef();
   const [ user, setUser ] = useState(posts.filter((post) => post._id === id)[0]?.user || null);
   const [ images, setImages ] = useState(posts.filter((post) => post._id === id)[0]?.images || []);
@@ -197,7 +197,7 @@ function Post() {
               name: user?.name,
               avatar: user?.avatar || require("../components/images/non-avatar.svg").default
             }
-          ]} navigate={navigate}/>
+          ]} navigate={navigate} businessId={businessId} />
           <div className={styles.buttons}>
             <Button text="Написать" small={true} />
             <Button text="Позвонить" small={true} />
@@ -528,7 +528,7 @@ function Post() {
           <Title text="Описание" />
           <div className={styles.description}>{post?.description}</div>
         </div>}
-        <div className={styles.lastComment} onClick={() => navigate(`/posts/${post._id}/comments`)}>
+        <div className={styles.lastComment} onClick={() => navigate( `/${businessId}/posts/${post._id}/comments`)}>
           <div>Комментарии <span>{post?.comments_count || 0}</span></div>
           {post && post.comments &&
             <div className={styles.comment}>
@@ -551,7 +551,7 @@ function Post() {
               <img src={require("../components/images/arrow-right.svg").default} alt="" />
             </div>
           </div>
-          <Grid items={posts_.slice(0,3)} navigate={navigate} />
+          <Grid items={posts_.slice(0,3)} navigate={navigate} businessId={businessId} />
         </>}
       {post?.input1 === "Автомобили" &&
       <div style={{marginTop: 20, display: "flex", alignItems: "center", gap: 10}}>
@@ -619,7 +619,7 @@ function Post() {
               <img src={require("../components/images/arrow-right.svg").default} alt="" />
             </div>
           </div>
-          <Grid items={posts_.slice(3,6)} navigate={navigate} />
+          <Grid items={posts_.slice(3,6)} navigate={navigate} businessId={businessId} />
         </>}
       <div className={styles.wrapper}>
         <Banner navigate={navigate} />

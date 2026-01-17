@@ -16,7 +16,7 @@ function User() {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const { account, sendMessage, message, setMessage } = useMainContext();
+  const { account, sendMessage, message, setMessage, businessId } = useMainContext();
 
   const [ variables, setVariables ] = useState([
     {
@@ -144,7 +144,7 @@ function User() {
             <span>{user?.username ? user?.username : user?._id}</span>
             {account?._id === user?._id && <img src={require("../components/images/arrow-right.svg").default} alt="arrow" />}
           </div>
-          <div onClick={() => navigate('/settings')}>{account?._id === user?._id && "Править"}</div>
+          <div onClick={() => navigate(`/${businessId}/settings`)}>{account?._id === user?._id && "Править"}</div>
         </div>
         <div className={styles.main}>
           <div>
@@ -179,7 +179,7 @@ function User() {
         </div>
         {(account?._id === user?._id && account) &&
           <div style={{marginTop: -15, marginBottom: 10, padding: "0 10px"}}>
-            <Button text="Пароли" small={true} handleClick={() => navigate("/passwords")} />
+            <Button text="Пароли" small={true} handleClick={() => navigate(`/${businessId}/passwords`)} />
           </div>
         }
         {(account?._id !== user?._id && account) &&
@@ -201,7 +201,7 @@ function User() {
           <>
             <Title text="Автомобили" allowGrid={() => setTransportView("grid")} allowBlocks={() => setTransportView("list")} selected={transportView}/>
             {transportView === "grid" &&
-              <Grid items={posts} navigate={navigate} />}
+              <Grid items={posts} navigate={navigate} businessId={businessId} />}
             {transportView === "list" &&
               <Blocks items={posts} />}
           </>}

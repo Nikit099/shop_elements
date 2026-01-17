@@ -277,7 +277,7 @@ function Main() {
             <div className={styles.informationdescription}>
               <ul style={{paddingLeft: 20}}>
                 <li style={{paddingBottom: 10}}>Стоимость доставки рассчитывается индивидуально, исходя из адреса получателя. Уточнить точную сумму можно при оформлении заказа.</li>
-                <li>По вопросам стоимости доставки вы можете связаться с нами по телефону <a href="tel:+79933074710" style={{ textDecoration: 'none', color: '#0066CC' }}>+7 993 30 74 710</a> или написать в <a href="https://wa.me/79933074710" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#0066CC' }}>WhatsApp</a> или <a href="https://t.me/LIGHTbusinessRose" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#0066CC' }}>Telegram</a></li>
+                <li>По вопросам стоимости доставки вы можете связаться с нами по телефону <a href="tel:+79933074710" style={{ textDecoration: 'none', color: '#0066CC' }}>+7 993 30 74 710</a> или написать в <a href="https://wa.me/79933074710" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#0066CC' }}>WhatsApp</a> или <a href="https://t.me/nikitalsa" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#0066CC' }}>Telegram</a></li>
               </ul>
               <span className={styles.ptitle} style={{fontWeight: 300, paddingTop: 5, display: "block"}}>Самовывоз:</span>
               <ul style={{paddingLeft: 20}}>

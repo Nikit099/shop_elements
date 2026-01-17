@@ -35,7 +35,7 @@ function AddService() {
 
   const navigate = useNavigate();
 
-  const { state, setState, accessToken, refreshToken, sendMessage, setLoading, postId, setPostId, message, setMessage } = useMainContext();
+  const { state, setState, accessToken, refreshToken, sendMessage, setLoading, postId, setPostId, message, setMessage, businessId } = useMainContext();
 
   const [ more, setMore ] = useState(false);
   const [ countLoadedImages, setCountLoadedImages ] = useState(null);
@@ -279,7 +279,7 @@ function AddService() {
 
   useEffect(() => {
     if (!accessToken && !refreshToken) {
-      navigate('/login', {replace: true});
+      navigate(`/${businessId}/login/`, {replace: true});
     }
   }, [accessToken, refreshToken])
 
@@ -302,7 +302,7 @@ function AddService() {
     if (message) {
       if (message[0] === 'posts') {
         if (message[1] === 'new') {
-          navigate("/posts/" + postId, {replace: true});
+          navigate(`/${businessId}/posts/` + postId, {replace: true});
         }
       }
       setMessage(null);

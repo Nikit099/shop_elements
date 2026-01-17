@@ -27,7 +27,7 @@ function multiplyPrice(priceString, multiplier) {
 function Post({ postData, type, parent, basePathUrl }) {
   const navigate = useNavigate();
   const [ data, setData ] = useState(postData);
-  const { sendMessage, message, setMessage, cartItems, setCartItems, account, theme } = useMainContext();
+  const { sendMessage, message, setMessage, cartItems, setCartItems, account, theme, businessId } = useMainContext();
   const postDivRef = useRef();
   const [ isOpenPost, setIsOpenPost ] = useState(false);
   const api = useSpringRef();
@@ -461,7 +461,7 @@ function Post({ postData, type, parent, basePathUrl }) {
                     <img src={require("../components/images/share-white.svg").default} alt="" style={{marginBottom: 0, height: 40}} />
                     Поделиться
                   </div>
-                  {(account.user?.username === "thecreatxr" || account.user?.username === "Mr_Romadanov") &&
+                  {/* {(account.user?.username === "thecreatxr" || account.user?.username === "Mr_Romadanov") &&
                   <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
                     window.history.replaceState({}, '', basePathUrl + "?card_id=" + data._id);
                     setPosts([]);
@@ -470,11 +470,24 @@ function Post({ postData, type, parent, basePathUrl }) {
                     document.querySelector("body").style.position = "relative";
                     document.querySelector("body").style.top = "0px";
                     setIsOpenPost(false);
-                    navigate("/edit/" + data._id);
+                    navigate(`/${businessId}/edit` + data._id);
                   }}>
                     <img src={require("./images/settings.svg").default} alt="" style={{marginBottom: 0, height: 40}} />
                     Настройки
-                  </div>}
+                  </div>} */}
+                   <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
+                    window.history.replaceState({}, '', basePathUrl + "?card_id=" + data._id);
+                    setPosts([]);
+                    document.querySelector("html").style.overflow = "auto";
+                    document.querySelector("body").style.overflow = "auto";
+                    document.querySelector("body").style.position = "relative";
+                    document.querySelector("body").style.top = "0px";
+                    setIsOpenPost(false);
+                    navigate(`/${businessId}/edit/` + data._id);
+                  }}>
+                    <img src={require("./images/settings.svg").default} alt="" style={{marginBottom: 0, height: 40}} />
+                    Настройки
+                  </div>
                 </div>
               </div>
               <div style={{fontSize: 18, fontWeight: 200, padding: "10px 15px 30px 15px"}}>{!newPrice ? data.price : newPrice.price}</div>
@@ -731,7 +744,7 @@ function Post({ postData, type, parent, basePathUrl }) {
                         document.querySelector("body").style.position = "relative";
                         document.querySelector("body").style.top = "0px";
                         setIsOpenPost(false);
-                        navigate("/cart");
+                        navigate(`/${businessId}/cart`);
                       }} style={{
                         fontWeight: 500,
                         fontSize: 16,

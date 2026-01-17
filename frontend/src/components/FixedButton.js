@@ -29,7 +29,7 @@ const FixedButton = (props) => {
   const [ isProButtonVisible, setIsProButtonVisible ] = useState(true);
   const [ canGoBack, setCanGoBack ] = useState(false);
   const [ canScrollUp, setCanScrollUp ] = useState(false);
-  const { accessToken, refreshToken, account, handleClickBackButton, cartItems } = useMainContext();
+  const { accessToken, refreshToken, account, handleClickBackButton, cartItems, businessId } = useMainContext();
 
   const scrollUp = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -44,7 +44,7 @@ const FixedButton = (props) => {
     setIsProButtonVisible(isProButtonVisible);
   }
 
-  const handleDoubleClick = useDoubleClick(() => navigate('/'), openButtons);
+  const handleDoubleClick = useDoubleClick(() => navigate(`/${businessId}`), openButtons);
 
   useEffect(() => {
     const updateCanGoBack = () => {
@@ -72,11 +72,12 @@ const FixedButton = (props) => {
 
   return (
     <div className={props.upper && 'upper' || props.send && 'send'}>
-      {(account.user?.username === "thecreatxr" || account.user?.username === "Mr_Romadanov") &&
-      <div className={`fixed-button add ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate('/add')}>
+      {/* {(account.user?.username === "thecreatxr" || account.user?.username === "Mr_Romadanov") &&
+      } */}
+      <div className={`fixed-button add ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate(`/${businessId}/add`)}>
         <img src={require("./images/plus.svg").default} className="" alt="plus" />
-      </div>}
-      <div className={`fixed-button ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate('/cart')}>
+      </div>
+      <div className={`fixed-button ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate(`/${businessId}/cart`)}>
         <img src={require("../screens/images/box.svg").default} className="" alt="cart" />
         {cartItems.length > 0 &&
         <div style={{position: "absolute", 
@@ -96,12 +97,19 @@ const FixedButton = (props) => {
         <div className="fixed-button-back" onClick={handleClickBackButton ? handleClickBackButton : goBack}>
           <img src={require("./images/arrow-right.svg").default} className="" alt="arrow" />
         </div>}
-      {(canScrollUp || props.send) &&
+      {/* {(canScrollUp || props.send) &&
       <div className={`fixed-button-up ${isProButtonVisible ? 'visible' : ''} ${(account.user?.username !== "thecreatxr" || account.user?.username !== "Mr_Romadanov") ? 'dif' : ''}`} onClick={!props.send ? scrollUp : props.onDelete}>
         {!props.send ?
           <img src={require("./images/arrow-right.svg").default} alt="arrow" />
           : <img src={require("./images/close.svg").default} alt="arrow" style={{width: "100%"}}/> }
-      </div>}
+      </div>} */}
+      {(canScrollUp || props.send) &&
+  <div className={`fixed-button-up ${isProButtonVisible ? 'visible' : ''}`} onClick={!props.send ? scrollUp : props.onDelete}>
+    {!props.send ?
+      <img src={require("./images/arrow-right.svg").default} alt="arrow" />
+      : <img src={require("./images/close.svg").default} alt="arrow" style={{width: "100%"}}/> }
+  </div>
+}
     </div>
   );
 };

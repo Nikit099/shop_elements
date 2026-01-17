@@ -17,8 +17,6 @@ load_dotenv()
 # Инициализация Supabase
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
-print(f"DEBUG: Supabase URL: {SUPABASE_URL}")
-print(f"DEBUG: Supabase Key present: {'Yes' if SUPABASE_KEY else 'No'}")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def compress_image_to_bytes(image_data, max_size, quality):
@@ -94,9 +92,9 @@ def handle_message(message):
                     db_key = 'id' if key == '_id' else key
                     
                     if isinstance(value, list) and value:
-                        query = query.in_(key, value)
+                        query = query.in_(db_key, value)
                     else:
-                        query = query.eq(key, value)
+                        query = query.eq(db_key, value)
                 
                 # Фильтр по цене
                 if price_range:

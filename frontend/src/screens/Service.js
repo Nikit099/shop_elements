@@ -26,7 +26,7 @@ function Service() {
 
   const navigate = useNavigate();
   const { id } = useParams();
-  const { accessToken, refreshToken, why, why2 } = useMainContext();
+  const { accessToken, refreshToken, why, why2, businessId } = useMainContext();
   const [ select, setSelect ] = useState("check");
   const [ more, setMore ] = useState(false);
   const [ images2, setImages2 ] = useState([]);
@@ -2592,7 +2592,7 @@ function Service() {
 
   useEffect(() => {
     if (!accessToken && !refreshToken) {
-      navigate('/login', {replace: true});
+      navigate(`/${businessId}/login`, {replace: true});
     }
   }, [accessToken, refreshToken])
 
@@ -2949,7 +2949,7 @@ function Service() {
               </div>
               <FormLIGHT inputs={Object.entries(inputs12).slice(3, 4)} setInputs={setInputs12} errors={errors} touched={touched} />
               <div className={styles.title} style={{marginBottom: -10}}>Осмотр кузова</div>
-              <CarView onlyView={false} carId="1234" damages={damages} />
+              <CarView onlyView={false} carId="1234" damages={damages} businessId={businessId} />
               {damages.length > 0 &&
               <div>
                 <div className={styles.title}>Повреждения кузова</div>

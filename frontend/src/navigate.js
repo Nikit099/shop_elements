@@ -12,6 +12,7 @@ import Add from './screens/Add';
 import Edit from './screens/Edit';
 import Cart from './screens/Cart';
 import CardRoute from './components/CardRoute';
+import NotFound from './screens/NotFound';
 
 const Navigate = () => {
 
@@ -37,7 +38,7 @@ return (
         <Route path="/:bId/search" element={<Search />} />
         <Route path="/:bId/card/:id" element={<CardRoute />} />
         <Route path="/:bId/edit/:id" element={<Edit />} />
-        <Route path="*" element={<RouterNavigate to={`/${localStorage.getItem('businessId') || 'default'}`} replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <FixedButton />
     </div>

@@ -18,7 +18,7 @@ load_dotenv()
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
+BUCKET_NAME = 'public_assets'
 def compress_image_to_bytes(image_data, max_size, quality):
     """Конвертирует любое изображение в WebP и сжимает"""
     image = Image.open(BytesIO(image_data))
@@ -51,7 +51,31 @@ app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
 CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*", max_http_buffer_size=1024 * 1024 * 1024)
 jwt = JWTManager(app)
-
+def upload_to_business_bucket(file_data, business_id, card_id, filename, is_lazy=False):
+    """Загружает файл в папку business_id/products/"""
+    try:
+        # Формируем путь в твоей структуре
+        folder = f"{business_id}/products"
+        if is_lazy:
+            folder = f"{business_id}/products/lazy"
+        
+        path = f"{folder}/{filename}"
+        
+        # Загружаем файл
+        response = supabase.storage.from_(BUCKET_NAME).upload(
+            path,
+            file_data,
+            {"content-type": "image/webp", "upsert": 'true'}  # upsert перезаписывает если существует
+        )
+        
+        # Получаем публичный URL
+        public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(path)
+        
+        return public_url
+    except Exception as e:
+        print(f"Error uploading to Supabase Storage: {e}")
+        return None
+    
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -71,7 +95,7 @@ def handle_disconnect():
 @socketio.on('message')
 def handle_message(message):
     message = json.loads(message)
-    print(f"Received message: {message[0]}")
+    print(f"Received message: {message[0]} и мы выполняем  {message[1]} ")
 
     try:
         if message[0] == "cards":
@@ -127,55 +151,118 @@ def handle_message(message):
                         .execute()
                     card['images'] = images_response.data
                     card['_id'] = card['id']
-                       # 2. ДОБАВИТЬ ЭТУ ЧАСТЬ: Превращаем строки из БД обратно в списки для фронта
-                    list_fields = ['colors', 'counts', 'packages', 'sizes' ]
+                    
+                    # 2. ДОБАВИТЬ ЭТУ ЧАСТЬ: Превращаем строки из БД обратно в списки для фронта
+                    list_fields = ['colors', 'counts', 'packages', 'sizes', 'prices']  # ← ДОБАВИЛ prices
                     for field in list_fields:
                         if field in card and isinstance(card[field], str):
                             try:
                                 card[field] = json.loads(card[field])
                             except:
-                                card[field] = [] # Если там пусто, отдаем пустой список
+                                card[field] = []  # Если там пусто или ошибка
+                        # Если поле уже None или другой тип, оставляем как есть
                 emit('message', json.dumps(['cards', 'filter', cards, message[2], message[3]]))
                 
             elif message[1] == "create":
                 card_data = message[2]
-                price_number = int(card_data['price'].replace(' ', '').replace('₽', '')) if 'price' in card_data else 0
+                business_id = message[4]
+                
+                # ОБРАБОТКА ЦЕНЫ - ИСПРАВЛЕННАЯ ВЕРСИЯ
+                price_raw = card_data.get('price', '0')
+                price_number = 0
+                
+                if isinstance(price_raw, str):
+                    # Убираем пробелы и символ ₽, оставляем только цифры
+                    price_str = price_raw.replace(' ', '').replace('₽', '').strip()
+                    if price_str and price_str.isdigit():
+                        price_number = int(price_str)
+                    else:
+                        # Пробуем извлечь цифры из строки типа "1000 руб"
+                        digits = ''.join(filter(str.isdigit, price_str))
+                        price_number = int(digits) if digits else 0
+                elif isinstance(price_raw, (int, float)):
+                    price_number = int(price_raw)
+                
+                # ОБРАБОТКА VIEWS_COUNT - ДОЛЖНА БЫТЬ ЧИСЛОМ
+                views_count_raw = card_data.get('views_count', 0)
+                if isinstance(views_count_raw, (int, float)):
+                    views_count = int(views_count_raw)
+                else:
+                    views_count = 0
+                
+                # ДЕБАГ: Выводим что получаем
+                print(f"DEBUG price_raw: {price_raw}, type: {type(price_raw)}")
+                print(f"DEBUG price_number: {price_number}, type: {type(price_number)}")
+                print(f"DEBUG views_count: {views_count}, type: {type(views_count)}")
                 
                 data = {
                     'category': card_data.get('category'),
                     'title': card_data.get('title'),
                     'description': card_data.get('description'),
-                    'price': card_data.get('price'),
-                    'price_number': price_number,
+                    'price': card_data.get('price', ''),
+                    'price_number': price_number,  # ← гарантированно число
                     'colors': json.dumps(card_data.get('colors', [])),
                     'counts': json.dumps(card_data.get('counts', [])),
                     'packages': json.dumps(card_data.get('packages', [])),
                     'sizes': json.dumps(card_data.get('sizes', [])),
                     'prices': json.dumps(card_data.get('prices', [])),
-                    'views_count': card_data.get('views_count', 0)
+                    'business_id': business_id,
+                    'views_count': views_count  # ← гарантированно число
                 }
                 
-                response = supabase.table('cards').insert(data).execute()
-                new_card_id = response.data[0]['id'] if response.data else None
-                emit('message', json.dumps(['cards', 'created', str(new_card_id)]))
+                # ДЕБАГ: Проверяем все значения перед вставкой
+                print("DEBUG data to insert:")
+                for key, value in data.items():
+                    print(f"  {key}: {repr(value)} (type: {type(value).__name__})")
+                
+                try:
+                    response = supabase.table('cards').insert(data).execute()
+                    new_card_id = response.data[0]['id'] if response.data else None
+                    emit('message', json.dumps(['cards', 'created', str(new_card_id)]))
+                except Exception as e:
+                    print(f"ERROR in insert: {e}")
+                    print(f"Problematic data: {data}")
+                    emit('message', json.dumps(['error', 'card_creation', str(e)]))
                 
             elif message[1] == "update":
                 card_data = message[2]
                 card_id = message[4]
-                price_number = int(card_data['price'].replace(' ', '').replace('₽', '')) if 'price' in card_data else 0
+                business_id = message[5]
+                
+                # ТАКАЯ ЖЕ ОБРАБОТКА ЦЕНЫ КАК ВЫШЕ
+                price_raw = card_data.get('price', '0')
+                price_number = 0
+                
+                if isinstance(price_raw, str):
+                    price_str = price_raw.replace(' ', '').replace('₽', '').strip()
+                    if price_str and price_str.isdigit():
+                        price_number = int(price_str)
+                    else:
+                        digits = ''.join(filter(str.isdigit, price_str))
+                        price_number = int(digits) if digits else 0
+                elif isinstance(price_raw, (int, float)):
+                    price_number = int(price_raw)
+                
+                # ОБРАБОТКА VIEWS_COUNT
+                views_count_raw = card_data.get('views_count', 0)
+                if isinstance(views_count_raw, (int, float)):
+                    views_count = int(views_count_raw)
+                else:
+                    views_count = 0
                 
                 data = {
                     'category': card_data.get('category'),
                     'title': card_data.get('title'),
                     'description': card_data.get('description'),
-                    'price': card_data.get('price'),
+                    'price': card_data.get('price', ''),
                     'price_number': price_number,
                     'colors': json.dumps(card_data.get('colors', [])),
                     'counts': json.dumps(card_data.get('counts', [])),
                     'packages': json.dumps(card_data.get('packages', [])),
                     'sizes': json.dumps(card_data.get('sizes', [])),
                     'prices': json.dumps(card_data.get('prices', [])),
-                    'views_count': card_data.get('views_count', 0)
+                    'business_id': business_id,
+                    'views_count': views_count
                 }
                 
                 supabase.table('cards').update(data).eq('id', card_id).execute()
@@ -195,31 +282,64 @@ def handle_message(message):
                 image_index = message[3]
                 image_data = message[4]
                 
-                if "," in image_data:
+                # НУЖНО ЕЩЁ ПОЛУЧИТЬ business_id
+                # Предположим, что он приходит в сообщении или есть в контексте
+                business_id = message[5] if len(message) > 5 else None
+                
+                if not business_id:
+                    # Попробуй получить из контекста или БД
+                    # Например, найди к какой карточке относится business_id
+                    try:
+                        card_response = supabase.table('cards').select('business_id').eq('id', card_id).execute()
+                        if card_response.data:
+                            business_id = card_response.data[0].get('business_id')
+                    except:
+                        pass
+                
+                if business_id and "," in image_data:
+                    # Декодируем base64
                     image_data_binary = base64.b64decode(image_data.split(',')[-1])
-                    compressed_image_data = compress_image(image_data_binary, (1200, 1200), 95)
-                    compressed_image_data_lazy = compress_image(image_data_binary, (100, 100), 75)
                     
-                    filename = str(uuid.uuid4()) + '.jpeg'
-                    server_endpoint = os.getenv('SERVER_END_POINT', 'http://localhost:4000')
+                    # Сжимаем изображения
+                    compressed_image = compress_image_to_bytes(image_data_binary, (1200, 1200), 95)
+                    compressed_image_lazy = compress_image_to_bytes(image_data_binary, (100, 100), 75)
                     
-                    # Сохраняем файлы локально (можно заменить на Supabase Storage)
-                    with open(f'static/{filename}', 'wb') as f:
-                        f.write(compressed_image_data)
-                    with open(f'static/lazy/{filename}', 'wb') as f:
-                        f.write(compressed_image_data_lazy)
+                    # Генерируем уникальные имена
+                    filename_base = str(uuid.uuid4())
+                    filename = f"{filename_base}.webp"
+                    filename_lazy = f"{filename_base}_lazy.webp"
                     
-                    # Сохраняем информацию в БД
-                    image_data = {
-                        'card_id': card_id,
-                        'file': f"{server_endpoint}/static/{filename}",
-                        'file_lazy': f"{server_endpoint}/static/lazy/{filename}",
-                        'image_index': image_index
-                    }
+                    # 1. ЗАГРУЖАЕМ В ПАПКУ БИЗНЕСА
+                    public_url = upload_to_business_bucket(
+                        file_data=compressed_image,
+                        business_id=business_id,
+                        card_id=card_id,
+                        filename=filename,
+                        is_lazy=False
+                    )
                     
-                    supabase.table('images').insert(image_data).execute()
-                    emit("message", json.dumps(["images", "added", image_index]))
+                    public_url_lazy = upload_to_business_bucket(
+                        file_data=compressed_image_lazy,
+                        business_id=business_id,
+                        card_id=card_id,
+                        filename=filename_lazy,
+                        is_lazy=True
+                    )
                     
+                    if public_url and public_url_lazy:
+                        # 2. СОХРАНЯЕМ ССЫЛКИ В ТАБЛИЦУ images
+                        image_record = {
+                            'card_id': card_id,
+                            'file': public_url,
+                            'file_lazy': public_url_lazy,
+                            'image_index': image_index,
+                        }
+                        
+                        supabase.table('images').insert(image_record).execute()
+                        emit("message", json.dumps(["images", "added", image_index, public_url]))
+                    else:
+                        emit("message", json.dumps(["error", "image_upload_failed"]))
+                
             elif message[1] == "delete":
                 image_id = message[2]
                 supabase.table('images').delete().eq('id', image_id).execute()
@@ -242,11 +362,10 @@ def handle_message(message):
         elif message[0] == "order":
             if message[1] == "new":
                 order_data = message[2]
-                
                 data = {
                     'name': order_data.get('name'),
                     'phone': order_data.get('phone'),
-                    'anonymous': order_data.get('anonymous', False),
+                    'anonymous': bool(order_data.get('anonymous')), 
                     'receiver_name': order_data.get('receiver_name'),
                     'receiver_phone': order_data.get('receiver_phone'),
                     'text_of_postcard': order_data.get('text_of_postcard'),
@@ -256,10 +375,11 @@ def handle_message(message):
                     'address': order_data.get('address'),
                     'date_of_post': order_data.get('date_of_post'),
                     'time_of_post': order_data.get('time_of_post'),
-                    'request_address': order_data.get('request_address', False),
-                    'request_datetime': order_data.get('request_datetime', False),
+                    'request_address': bool(order_data.get('request_address')), 
+                    'request_datetime':  bool(order_data.get('request_datetime')),
                     'items': json.dumps(order_data.get('items', []))
                 }
+                print(data)
                 
                 response = supabase.table('orders').insert(data).execute()
                 order_id = response.data[0]['id'] if response.data else None

@@ -1,0 +1,86 @@
+2026-01-17 17:28:04,680 - __main__ - INFO - Бот запускается...
+2026-01-17 17:28:05,892 - httpx - INFO - HTTP Request: POST https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/rpc/exec_sql "HTTP/2 404 Not Found"
+2026-01-17 17:28:05,894 - __main__ - ERROR - Ошибка инициализации базы данных: {'message': 'Could not find the function public.exec_sql(sql) in the schema cache', 'code': 'PGRST202', 'hint': None, 'details': 'Searched for the function public.exec_sql with parameter sql or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.'}
+2026-01-17 17:28:05,895 - __main__ - CRITICAL - Критическая ошибка: Не удалось инициализировать базу данных: {'message': 'Could not find the function public.exec_sql(sql) in the schema cache', 'code': 'PGRST202', 'hint': None, 'details': 'Searched for the function public.exec_sql with parameter sql or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.'}
+2026-01-17 17:28:05,925 - __main__ - CRITICAL - Фатальная ошибка: Не удалось инициализировать базу данных: {'message': 'Could not find the function public.exec_sql(sql) in the schema cache', 'code': 'PGRST202', 'hint': None, 'details': 'Searched for the function public.exec_sql with parameter sql or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.'}
+2026-01-17 17:37:19,352 - __main__ - INFO - Бот запускается...
+2026-01-17 17:37:19,353 - __main__ - INFO - Проверка подключения к Supabase...
+2026-01-17 17:37:20,819 - httpx - INFO - HTTP Request: GET https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/clients?select=%2A&limit=1 "HTTP/2 200 OK"
+2026-01-17 17:37:20,821 - __main__ - INFO - Таблица 'users' доступна. Записей: 1
+2026-01-17 17:37:21,029 - httpx - INFO - HTTP Request: GET https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?select=%2A&limit=1 "HTTP/2 206 Partial Content"
+2026-01-17 17:37:21,031 - __main__ - INFO - Таблица 'orders' доступна. Записей: 5
+2026-01-17 17:37:21,228 - httpx - INFO - HTTP Request: GET https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?select=%2A&limit=1 "HTTP/2 206 Partial Content"
+2026-01-17 17:37:21,229 - __main__ - INFO - Таблица 'hints' доступна. Записей: 5
+2026-01-17 17:37:21,230 - __main__ - INFO - ✅ Подключение к Supabase успешно установлено
+2026-01-17 17:37:21,234 - __main__ - INFO - Фоновая задача запущена
+2026-01-17 17:37:21,387 - httpx - INFO - HTTP Request: GET https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?select=%2A&sended=eq.False "HTTP/2 200 OK"
+2026-01-17 17:37:21,389 - __main__ - ERROR - Ошибка форматирования намёка: 'str' object has no attribute 'get'
+2026-01-17 17:37:21,737 - __main__ - ERROR - Ошибка отправки намёка 1 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:21,766 - __main__ - ERROR - Не удалось отправить уведомление админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:21,907 - __main__ - INFO - Намёк 1 отправлен администратору 453500861
+2026-01-17 17:37:22,098 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?id=eq.1 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:22,099 - __main__ - ERROR - Ошибка обновления намёка 1: {'message': "Could not find the 'updated_at' column of 'hints' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:22,099 - __main__ - ERROR - Ошибка форматирования намёка: 'str' object has no attribute 'get'
+2026-01-17 17:37:22,101 - aiogram.dispatcher - INFO - Start polling
+2026-01-17 17:37:22,208 - aiogram.dispatcher - INFO - Run polling for bot @lightbizbot id=7406131994 - 'Студия Роз | LIGHT Business'
+2026-01-17 17:37:22,227 - __main__ - ERROR - Ошибка отправки намёка 3 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:22,337 - __main__ - INFO - Намёк 3 отправлен администратору 453500861
+2026-01-17 17:37:22,508 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?id=eq.3 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:22,509 - __main__ - ERROR - Ошибка обновления намёка 3: {'message': "Could not find the 'updated_at' column of 'hints' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:22,510 - __main__ - ERROR - Ошибка форматирования намёка: 'str' object has no attribute 'get'
+2026-01-17 17:37:22,627 - __main__ - ERROR - Ошибка отправки намёка 4 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:22,738 - __main__ - INFO - Намёк 4 отправлен администратору 453500861
+2026-01-17 17:37:22,927 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?id=eq.4 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:22,928 - __main__ - ERROR - Ошибка обновления намёка 4: {'message': "Could not find the 'updated_at' column of 'hints' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:23,137 - httpx - INFO - HTTP Request: GET https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?select=%2A&sended=eq.False&order=created_at.asc "HTTP/2 200 OK"
+2026-01-17 17:37:23,139 - __main__ - ERROR - Ошибка форматирования заказа: 'str' object has no attribute 'get'
+2026-01-17 17:37:23,277 - __main__ - ERROR - Ошибка отправки заказа 2 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:23,488 - __main__ - INFO - Заказ 2 отправлен администратору 453500861
+2026-01-17 17:37:23,687 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?id=eq.2 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:23,689 - __main__ - ERROR - Ошибка обновления заказа 2: {'message': "Could not find the 'updated_at' column of 'orders' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:23,689 - __main__ - ERROR - Ошибка форматирования заказа: 'str' object has no attribute 'get'
+2026-01-17 17:37:23,837 - __main__ - ERROR - Ошибка отправки заказа 3 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:24,045 - __main__ - INFO - Заказ 3 отправлен администратору 453500861
+2026-01-17 17:37:24,187 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?id=eq.3 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:24,189 - __main__ - ERROR - Ошибка обновления заказа 3: {'message': "Could not find the 'updated_at' column of 'orders' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:24,189 - __main__ - ERROR - Ошибка форматирования заказа: 'str' object has no attribute 'get'
+2026-01-17 17:37:24,297 - __main__ - ERROR - Ошибка отправки заказа 5 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:24,418 - __main__ - INFO - Заказ 5 отправлен администратору 453500861
+2026-01-17 17:37:24,607 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?id=eq.5 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:24,608 - __main__ - ERROR - Ошибка обновления заказа 5: {'message': "Could not find the 'updated_at' column of 'orders' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:40,188 - httpx - INFO - HTTP Request: GET https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?select=%2A&sended=eq.False "HTTP/2 200 OK"
+2026-01-17 17:37:40,190 - __main__ - ERROR - Ошибка форматирования намёка: 'str' object has no attribute 'get'
+2026-01-17 17:37:40,478 - __main__ - ERROR - Ошибка отправки намёка 1 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:40,699 - __main__ - INFO - Намёк 1 отправлен администратору 453500861
+2026-01-17 17:37:40,847 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?id=eq.1 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:40,849 - __main__ - ERROR - Ошибка обновления намёка 1: {'message': "Could not find the 'updated_at' column of 'hints' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:40,850 - __main__ - ERROR - Ошибка форматирования намёка: 'str' object has no attribute 'get'
+2026-01-17 17:37:41,060 - __main__ - ERROR - Ошибка отправки намёка 3 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:41,267 - __main__ - INFO - Намёк 3 отправлен администратору 453500861
+2026-01-17 17:37:41,398 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?id=eq.3 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:41,400 - __main__ - ERROR - Ошибка обновления намёка 3: {'message': "Could not find the 'updated_at' column of 'hints' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:41,402 - __main__ - ERROR - Ошибка форматирования намёка: 'str' object has no attribute 'get'
+2026-01-17 17:37:41,507 - __main__ - ERROR - Ошибка отправки намёка 4 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:41,630 - __main__ - INFO - Намёк 4 отправлен администратору 453500861
+2026-01-17 17:37:41,778 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/hints?id=eq.4 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:41,781 - __main__ - ERROR - Ошибка обновления намёка 4: {'message': "Could not find the 'updated_at' column of 'hints' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:41,918 - httpx - INFO - HTTP Request: GET https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?select=%2A&sended=eq.False&order=created_at.asc "HTTP/2 200 OK"
+2026-01-17 17:37:41,921 - __main__ - ERROR - Ошибка форматирования заказа: 'str' object has no attribute 'get'
+2026-01-17 17:37:42,036 - __main__ - ERROR - Ошибка отправки заказа 2 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:42,188 - __main__ - INFO - Заказ 2 отправлен администратору 453500861
+2026-01-17 17:37:42,378 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?id=eq.2 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:42,379 - __main__ - ERROR - Ошибка обновления заказа 2: {'message': "Could not find the 'updated_at' column of 'orders' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:42,379 - __main__ - ERROR - Ошибка форматирования заказа: 'str' object has no attribute 'get'
+2026-01-17 17:37:42,492 - __main__ - ERROR - Ошибка отправки заказа 3 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:42,937 - __main__ - INFO - Заказ 3 отправлен администратору 453500861
+2026-01-17 17:37:43,066 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?id=eq.3 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:43,070 - __main__ - ERROR - Ошибка обновления заказа 3: {'message': "Could not find the 'updated_at' column of 'orders' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:43,071 - __main__ - ERROR - Ошибка форматирования заказа: 'str' object has no attribute 'get'
+2026-01-17 17:37:43,177 - __main__ - ERROR - Ошибка отправки заказа 5 админу 1265381195: Telegram server says - Forbidden: bot was blocked by the user
+2026-01-17 17:37:43,299 - __main__ - INFO - Заказ 5 отправлен администратору 453500861
+2026-01-17 17:37:43,448 - httpx - INFO - HTTP Request: PATCH https://ghkknhfliuddrcgnkvqv.supabase.co/rest/v1/orders?id=eq.5 "HTTP/2 400 Bad Request"
+2026-01-17 17:37:43,450 - __main__ - ERROR - Ошибка обновления заказа 5: {'message': "Could not find the 'updated_at' column of 'orders' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+2026-01-17 17:37:56,854 - aiogram.dispatcher - INFO - Polling stopped
+2026-01-17 17:37:56,854 - __main__ - INFO - Бот останавливается...
+2026-01-17 17:37:57,048 - aiogram.dispatcher - INFO - Polling stopped for bot @lightbizbot id=7406131994 - 'Студия Роз | LIGHT Business'
+2026-01-17 17:37:57,308 - __main__ - INFO - Бот остановлен пользователем

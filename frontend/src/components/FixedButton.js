@@ -37,8 +37,14 @@ const FixedButton = (props) => {
   }
 
   const goBack = () => {
-    window.history.back();
-  }
+    // Проверяем, если мы на глубоком уровне, просто идем назад, 
+    // но лучше всегда контролировать путь через businessId
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(`/${businessId}`);
+    }
+  };
 
   const openButtons = () => {
     setIsProButtonVisible(isProButtonVisible);

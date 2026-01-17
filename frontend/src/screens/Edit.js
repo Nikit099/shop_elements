@@ -136,7 +136,7 @@ function Edit() {
         sendMessage(JSON.stringify(["images", "delete", image._id]));
       }
     }
-    sendMessage(JSON.stringify(["cards", "update", values, account, id]));
+    sendMessage(JSON.stringify(["cards", "update", values, account, id, businessId]));
     setSaving(true);
   }
   useEffect(() => {

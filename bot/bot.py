@@ -12,7 +12,6 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import httpx
 
 # Загружаем переменные окружения
 load_dotenv()
@@ -20,12 +19,8 @@ load_dotenv()
 # Конфигурация из переменных окружения
 API_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')  # Используем service role для полного доступа
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 ADMIN_CHAT_IDS = list(map(int, os.getenv('ADMIN_CHAT_IDS', '1265381195,453500861').split(',')))
-# Ключ должен начинаться с eyJhbGciOiJ...
-key = os.getenv('SUPABASE_KEY', '')
-
-print(key)
 
 # Проверка обязательных переменных
 if not all([API_TOKEN, SUPABASE_URL, SUPABASE_KEY]):
@@ -56,105 +51,53 @@ dp = Dispatcher()
 # Инициализация Supabase клиента
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Кэш для временного хранения данных
-order_cache: Dict[str, Any] = {}
-
-class DatabaseError(Exception):
-    """Кастомное исключение для ошибок базы данных"""
-    pass
-
 async def init_db() -> None:
-    """Инициализация таблиц в Supabase"""
+    """Инициализация таблиц в Supabase через SQL Editor"""
     try:
-        # Создаем таблицу users
-        create_users_table = """
-        CREATE TABLE IF NOT EXISTS users (
-            id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT UNIQUE NOT NULL,
-            username TEXT,
-            full_name TEXT,
-            start_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-        CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
-        """
+        # Просто проверяем подключение - таблицы создадим через веб-интерфейс
+        # или с помощью простых запросов через supabase.table().create()
         
-        # Создаем таблицу orders
-        create_orders_table = """
-        CREATE TABLE IF NOT EXISTS orders (
-            id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
-            name TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            anonymous BOOLEAN DEFAULT FALSE,
-            receiver_name TEXT,
-            receiver_phone TEXT,
-            text_of_postcard TEXT,
-            comment TEXT,
-            delivery TEXT,
-            city TEXT,
-            address TEXT,
-            date_of_post TEXT,
-            time_of_post TEXT,
-            request_address BOOLEAN DEFAULT FALSE,
-            request_datetime BOOLEAN DEFAULT FALSE,
-            items JSONB NOT NULL DEFAULT '[]'::jsonb,
-            total_price INTEGER,
-            status TEXT DEFAULT 'new',
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            sended BOOLEAN DEFAULT FALSE
-        );
-        CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-        CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
-        """
+        logger.info("Проверка подключения к Supabase...")
         
-        # Создаем таблицу hints
-        create_hints_table = """
-        CREATE TABLE IF NOT EXISTS hints (
-            id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
-            name TEXT NOT NULL,
-            receiver_name TEXT,
-            receiver_phone TEXT,
-            product JSONB NOT NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            sended BOOLEAN DEFAULT FALSE
-        );
-        CREATE INDEX IF NOT EXISTS idx_hints_sended ON hints(sended);
-        """
+        # Простой запрос для проверки
+        try:
+            result = supabase.table("clients").select("*", count="exact").limit(1).execute()
+            logger.info(f"Таблица 'users' доступна. Записей: {result.count}")
+        except Exception as e:
+            logger.warning(f"Таблица 'users' не существует или недоступна: {e}")
+            
+        try:
+            result = supabase.table("orders").select("*", count="exact").limit(1).execute()
+            logger.info(f"Таблица 'orders' доступна. Записей: {result.count}")
+        except Exception as e:
+            logger.warning(f"Таблица 'orders' не существует или недоступна: {e}")
+            
+        try:
+            result = supabase.table("hints").select("*", count="exact").limit(1).execute()
+            logger.info(f"Таблица 'hints' доступна. Записей: {result.count}")
+        except Exception as e:
+            logger.warning(f"Таблица 'hints' не существует или недоступна: {e}")
         
-        # Используем RPC для выполнения SQL
-        await asyncio.to_thread(
-            lambda: supabase.rpc('exec_sql', {'sql': create_users_table}).execute()
-        )
-        await asyncio.to_thread(
-            lambda: supabase.rpc('exec_sql', {'sql': create_orders_table}).execute()
-        )
-        await asyncio.to_thread(
-            lambda: supabase.rpc('exec_sql', {'sql': create_hints_table}).execute()
-        )
-        
-        logger.info("База данных инициализирована успешно")
+        logger.info("✅ Подключение к Supabase успешно установлено")
         
     except Exception as e:
-        logger.error(f"Ошибка инициализации базы данных: {e}")
-        raise DatabaseError(f"Не удалось инициализировать базу данных: {e}")
+        logger.error(f"Ошибка проверки подключения к базе данных: {e}")
+        logger.info("\n📋 Инструкция по созданию таблиц в Supabase:")
+        logger.info("1. Залогиньтесь в https://app.supabase.com")
+        logger.info("2. Выберите ваш проект")
+        logger.info("3. Перейдите в раздел 'Table Editor'")
+        logger.info("4. Создайте таблицы вручную или используйте SQL из README")
 
 def multiply_price(price_string: str, multiplier: int) -> str:
     """Умножает цену, представленную как строка с пробелами"""
     try:
-        # Удаляем все нецифровые символы, кроме пробелов
         cleaned_price_string = re.sub(r'[^\d\s]', '', price_string)
-        # Убираем пробелы и преобразуем в число
         amount = int(cleaned_price_string.replace(' ', ''))
         total_amount = round(amount * multiplier)
-        # Форматируем с пробелами как тысячи
         formatted_amount = f'{total_amount:,}'.replace(',', ' ')
         return formatted_amount
     except (ValueError, AttributeError) as e:
-        logger.error(f"Ошибка умножения цены: {e}, price_string: {price_string}")
+        logger.error(f"Ошибка умножения цены: {e}")
         return "0"
 
 def get_price(product_data: Dict[str, Any]) -> str:
@@ -162,9 +105,8 @@ def get_price(product_data: Dict[str, Any]) -> str:
     try:
         if "prices" in product_data and product_data["prices"]:
             for price_config in product_data["prices"]:
-                matches = [True, True, True, True]  # цвет, количество, упаковка, размер
+                matches = [True, True, True, True]
                 
-                # Проверяем соответствие характеристик
                 if price_config.get("colors"):
                     matches[0] = product_data.get("selectedColor") in price_config["colors"]
                 if price_config.get("counts"):
@@ -174,14 +116,12 @@ def get_price(product_data: Dict[str, Any]) -> str:
                 if price_config.get("sizes"):
                     matches[3] = product_data.get("selectedSize") in price_config["sizes"]
                 
-                # Если все условия совпадают
                 if all(matches):
                     return price_config.get("price", "0")
         
-        # Возвращаем базовую цену или 0
         return product_data.get("price", "0")
     except Exception as e:
-        logger.error(f"Ошибка получения цены: {e}, product_data: {product_data}")
+        logger.error(f"Ошибка получения цены: {e}")
         return "0"
 
 def calculate_total(items: List[Dict[str, Any]]) -> tuple[str, int]:
@@ -192,7 +132,6 @@ def calculate_total(items: List[Dict[str, Any]]) -> tuple[str, int]:
             product = item.get("product", {})
             count = item.get("count", 0)
             price_str = get_price(product)
-            # Извлекаем число из строки с ценой
             price_num = int(re.sub(r'[^\d]', '', price_str)) if price_str else 0
             total_price += price_num * count
         
@@ -206,13 +145,7 @@ async def save_user(user_id: int, username: Optional[str], full_name: str) -> No
     """Сохраняет пользователя в базу данных"""
     try:
         # Проверяем, существует ли пользователь
-        existing_user = await asyncio.to_thread(
-            lambda: supabase.table("users")
-            .select("*")
-            .eq("user_id", user_id)
-            .execute()
-        )
-        
+        existing_user = supabase.table("clients").select("*").eq("user_id", user_id).execute()        
         if not existing_user.data:
             # Создаем нового пользователя
             user_data = {
@@ -222,22 +155,18 @@ async def save_user(user_id: int, username: Optional[str], full_name: str) -> No
                 "start_date": datetime.now().isoformat()
             }
             
-            await asyncio.to_thread(
-                lambda: supabase.table("users").insert(user_data).execute()
-            )
+            supabase.table("clients").insert(user_data).execute()
             logger.info(f"Новый пользователь сохранен: {user_id}")
+        else:
+            logger.debug(f"Пользователь {user_id} уже существует в базе")
+            
     except Exception as e:
         logger.error(f"Ошибка сохранения пользователя {user_id}: {e}")
 
 async def get_unsent_hints() -> List[Dict[str, Any]]:
     """Получает непросмотренные намёки"""
     try:
-        response = await asyncio.to_thread(
-            lambda: supabase.table("hints")
-            .select("*")
-            .eq("sended", False)
-            .execute()
-        )
+        response = supabase.table("hints").select("*").eq("sended", False).execute()
         return response.data
     except Exception as e:
         logger.error(f"Ошибка получения намёков: {e}")
@@ -246,13 +175,7 @@ async def get_unsent_hints() -> List[Dict[str, Any]]:
 async def get_unsent_orders() -> List[Dict[str, Any]]:
     """Получает необработанные заказы"""
     try:
-        response = await asyncio.to_thread(
-            lambda: supabase.table("orders")
-            .select("*")
-            .eq("sended", False)
-            .order("created_at", desc=False)
-            .execute()
-        )
+        response = supabase.table("orders").select("*").eq("sended", False).order("created_at").execute()
         return response.data
     except Exception as e:
         logger.error(f"Ошибка получения заказов: {e}")
@@ -261,24 +184,20 @@ async def get_unsent_orders() -> List[Dict[str, Any]]:
 async def mark_hint_as_sent(hint_id: int) -> None:
     """Помечает намёк как отправленный"""
     try:
-        await asyncio.to_thread(
-            lambda: supabase.table("hints")
-            .update({"sended": True, "updated_at": datetime.now().isoformat()})
-            .eq("id", hint_id)
-            .execute()
-        )
+        supabase.table("hints").update({
+            "sended": True, 
+            "updated_at": datetime.now().isoformat()
+        }).eq("id", hint_id).execute()
     except Exception as e:
         logger.error(f"Ошибка обновления намёка {hint_id}: {e}")
 
 async def mark_order_as_sent(order_id: int) -> None:
     """Помечает заказ как обработанный"""
     try:
-        await asyncio.to_thread(
-            lambda: supabase.table("orders")
-            .update({"sended": True, "updated_at": datetime.now().isoformat()})
-            .eq("id", order_id)
-            .execute()
-        )
+        supabase.table("orders").update({
+            "sended": True, 
+            "updated_at": datetime.now().isoformat()
+        }).eq("id", order_id).execute()
     except Exception as e:
         logger.error(f"Ошибка обновления заказа {order_id}: {e}")
 
@@ -287,7 +206,6 @@ def format_hint_message(hint: Dict[str, Any]) -> str:
     try:
         product = hint.get("product", {})
         
-        # Формируем строку характеристик
         characteristics = []
         if product.get("selectedColor"):
             characteristics.append(product["selectedColor"])
@@ -325,7 +243,6 @@ def format_order_message(order: Dict[str, Any]) -> str:
         items = order.get("items", [])
         total_price = order.get("total_price", 0)
         
-        # Формируем список товаров
         items_text = ""
         for i, item in enumerate(items, 1):
             product = item.get("product", {})
@@ -381,7 +298,6 @@ async def background_task() -> None:
             for hint in hints:
                 message = format_hint_message(hint)
                 
-                # Отправляем всем администраторам
                 for admin_id in ADMIN_CHAT_IDS:
                     try:
                         await bot.send_message(
@@ -393,7 +309,6 @@ async def background_task() -> None:
                     except Exception as e:
                         logger.error(f"Ошибка отправки намёка {hint['id']} админу {admin_id}: {e}")
                 
-                # Помечаем как отправленный
                 await mark_hint_as_sent(hint["id"])
             
             # Получаем и отправляем заказы
@@ -401,7 +316,6 @@ async def background_task() -> None:
             for order in orders:
                 message = format_order_message(order)
                 
-                # Отправляем всем администраторам
                 for admin_id in ADMIN_CHAT_IDS:
                     try:
                         await bot.send_message(
@@ -413,15 +327,13 @@ async def background_task() -> None:
                     except Exception as e:
                         logger.error(f"Ошибка отправки заказа {order['id']} админу {admin_id}: {e}")
                 
-                # Помечаем как отправленный
                 await mark_order_as_sent(order["id"])
             
-            # Пауза между проверками
-            await asyncio.sleep(15)  # Проверяем каждые 15 секунд
+            await asyncio.sleep(15)
             
         except Exception as e:
             logger.error(f"Ошибка в фоновой задаче: {e}")
-            await asyncio.sleep(30)  # При ошибке ждем дольше
+            await asyncio.sleep(30)
 
 @dp.message(Command("start", "help"))
 async def send_welcome(message: types.Message) -> None:
@@ -432,21 +344,17 @@ async def send_welcome(message: types.Message) -> None:
         username = user.username
         full_name = user.full_name
         
-        # Сохраняем пользователя в базу
         await save_user(user_id, username, full_name)
         
-        # Формируем приветствие
         greeting = f"{f'Привет, @{username}!' if username else 'Привет!'} "
         greeting += "Это <b>Студия Роз | LIGHT Business</b>, переходи в приложение, чтобы порадовать своих любимых."
         
-        # Создаем кнопку
         inline_btn = types.InlineKeyboardButton(
             text='🎁 Запустить приложение',
             url='https://t.me/lightbizbot/litee'
         )
         inline_kb = types.InlineKeyboardMarkup(inline_keyboard=[[inline_btn]])
         
-        # Отправляем приветствие
         await message.answer(
             greeting,
             parse_mode=ParseMode.HTML,
@@ -465,33 +373,32 @@ async def send_stats(message: types.Message) -> None:
     try:
         user_id = message.from_user.id
         
-        # Проверяем, является ли пользователь администратором
         if user_id not in ADMIN_CHAT_IDS:
             await message.answer("У вас нет прав для выполнения этой команды.")
             return
         
-        # Получаем статистику
-        stats_data = await asyncio.to_thread(
-            lambda: supabase.rpc('get_stats', {}).execute()
-        )
+        # Получаем статистику через отдельные запросы
+        clients_count = supabase.table("clients").select("*", count="exact").execute().count or 0
+        orders_count = supabase.table("orders").select("*", count="exact").execute().count or 0
+        hints_count = supabase.table("hints").select("*", count="exact").execute().count or 0
         
-        if stats_data.data:
-            stats = stats_data.data[0]
-            response = f"""
+        # Новые заказы и намёки
+        new_orders = supabase.table("orders").select("*", count="exact").eq("sended", False).execute().count or 0
+        new_hints = supabase.table("hints").select("*", count="exact").eq("sended", False).execute().count or 0
+        
+        response = f"""
 <b>📊 Статистика</b>
 
-Пользователей: {stats.get('users_count', 0)}
-Заказов: {stats.get('orders_count', 0)}
-Намёков: {stats.get('hints_count', 0)}
+Пользователей: {clients_count}  # было users_count
+Заказов: {orders_count}
+Намёков: {hints_count}
 
-Новых заказов: {stats.get('new_orders', 0)}
-Новых намёков: {stats.get('new_hints', 0)}
+Новых заказов: {new_orders}
+Новых намёков: {new_hints}
 
-За сегодня: {stats.get('today_orders', 0)} заказов
+<i>Обновлено: {datetime.now().strftime('%H:%M:%S')}</i>
 """
-            await message.answer(response, parse_mode=ParseMode.HTML)
-        else:
-            await message.answer("Не удалось получить статистику.")
+        await message.answer(response, parse_mode=ParseMode.HTML)
             
     except Exception as e:
         logger.error(f"Ошибка получения статистики: {e}")
@@ -501,7 +408,7 @@ async def on_startup() -> None:
     """Выполняется при запуске бота"""
     logger.info("Бот запускается...")
     
-    # Инициализируем базу данных
+    # Инициализируем базу данных (просто проверяем подключение)
     await init_db()
     
     # Запускаем фоновую задачу
@@ -521,7 +428,6 @@ async def on_shutdown() -> None:
     """Выполняется при остановке бота"""
     logger.info("Бот останавливается...")
     
-    # Отправляем уведомление администраторам
     for admin_id in ADMIN_CHAT_IDS:
         try:
             await bot.send_message(

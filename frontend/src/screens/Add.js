@@ -123,7 +123,7 @@ function Add() {
       delete values["prices"];
       delete values["image_color"];
     }
-    sendMessage(JSON.stringify(["cards", "create", values, account]));
+    sendMessage(JSON.stringify(["cards", "create", values, account, businessId]));
     setSaving(true);
   }
   useEffect(() => {
@@ -142,7 +142,7 @@ function Add() {
   }, [message]);
   useEffect(() => {
     if (cardId && indexOfLoadedImage.current + 1 <= images.length && images[indexOfLoadedImage.current + 1]) {
-      sendMessage(JSON.stringify(["images", "add", cardId, indexOfLoadedImage.current + 1, images[indexOfLoadedImage.current + 1].file]));
+      sendMessage(JSON.stringify(["images", "add", cardId, indexOfLoadedImage.current + 1, images[indexOfLoadedImage.current + 1].file, businessId]));
     } else if (cardId) {
       setSaving(false);
       navigate(`/${businessId}/search?card_id=`  + cardId, { replace: true });

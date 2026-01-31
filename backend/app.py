@@ -2,38 +2,38 @@ import os
 import json
 import base64
 import uuid
-from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+import hashlib
+import hmac
+from datetime import datetime, timedelta
+from functools import wraps
 from flask_socketio import SocketIO, emit, disconnect
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, create_refresh_token, get_jwt_identity
+# from flask_jwt_extended import JWTManager, jwt_required, create_access_token, create_refresh_token, get_jwt_identity
 from PIL import Image
 from io import BytesIO
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from flask import Flask, send_from_directory, jsonify, request
 
 load_dotenv()
 
 # Инициализация Supabase
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 BUCKET_NAME = 'public_assets'
-def compress_image_to_bytes(image_data, max_size, quality):
-    """Конвертирует любое изображение в WebP и сжимает"""
-    image = Image.open(BytesIO(image_data))
-    
-    # Для WebP лучше оставить RGBA, если есть прозрачность, 
-    # но для цветов обычно прозрачность не нужна, так что RGB ок.
-    if image.mode in ("RGBA", "P"):
-        image = image.convert("RGB")
-    
-    image.thumbnail(max_size, Image.LANCZOS)
-    img_byte_arr = BytesIO()
-    
-    # Сохраняем именно в формате WEBP
-    image.save(img_byte_arr, format='WEBP', quality=quality, method=6) # method 6 - лучшее сжатие
-    return img_byte_arr.getvalue()
+
+# Конфигурация Flask и JWT
+app = Flask(__name__)
+# app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-this')
+# app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+# app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
+
+CORS(app, resources={r"/*": {"origins": "*"}})
+socketio = SocketIO(app, cors_allowed_origins="*", max_http_buffer_size=1024 * 1024 * 1024)
+# jwt = JWTManager(app)
 
 def prepare_data(data):
     """Подготовка данных для JSON"""
@@ -46,36 +46,165 @@ def prepare_data(data):
     else:
         return str(data)
 
-app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024
-CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*", max_http_buffer_size=1024 * 1024 * 1024)
-jwt = JWTManager(app)
+def get_or_create_user(telegram_data: dict):
+    """Получает или создает пользователя в базе данных"""
+    try:
+        response = supabase.table('users') \
+            .select('*') \
+            .eq('telegram_id', telegram_data['telegram_id']) \
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            user = response.data[0]
+            update_data = {
+                'username': telegram_data.get('username'),
+                'first_name': telegram_data.get('first_name'),
+                'last_name': telegram_data.get('last_name'),
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            supabase.table('users') \
+                .update(update_data) \
+                .eq('id', user['id']) \
+                .execute()
+            
+            return user
+        else:
+            new_user = {
+                'telegram_id': telegram_data['telegram_id'],
+                'username': telegram_data.get('username'),
+                'first_name': telegram_data.get('first_name'),
+                'last_name': telegram_data.get('last_name'),
+                'language_code': telegram_data.get('language_code'),
+                'is_premium': telegram_data.get('is_premium', False),
+                'role': 'user',
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            response = supabase.table('users').insert(new_user).execute()
+            return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error getting/creating user: {e}")
+        return None
+
+def check_business_owner(business_id: str, user_id: int) -> dict:
+    """
+    Проверяет, является ли пользователь владельцем бизнеса
+    Возвращает информацию о магазине и флаг is_owner
+    """
+    try:
+        # Получаем бизнес из базы данных
+        response = supabase.table('businesses') \
+            .select('*') \
+            .eq('id', business_id) \
+            .execute()
+        
+        if not response.data:
+            return None
+        
+        business = response.data[0]
+        
+        # Проверяем, совпадает ли owner_id с user_id
+        is_owner = business.get('owner_id') == user_id
+        
+        return {
+            'business_id': business['id'],
+            'business_name': business.get('name'),
+            'owner_id': business.get('owner_id'),
+            'is_owner': is_owner,
+            'business_data': business
+        }
+    except Exception as e:
+        print(f"Error checking business owner: {e}")
+        return None
+
+def create_shop_owner(telegram_id: int, shop_id: str):
+    """Назначает пользователя владельцем магазина"""
+    try:
+        response = supabase.table('users') \
+            .select('*') \
+            .eq('telegram_id', telegram_id) \
+            .execute()
+        
+        if not response.data:
+            return False
+        
+        user = response.data[0]
+        update_data = {
+            'role': 'shop_owner',
+            'owned_shop_id': shop_id,
+            'updated_at': datetime.utcnow().isoformat()
+        }
+        
+        supabase.table('users') \
+            .update(update_data) \
+            .eq('id', user['id']) \
+            .execute()
+        
+        return True
+    except Exception as e:
+        print(f"Error creating shop owner: {e}")
+        return False
+
+# Вспомогательные функции
+def compress_image_to_bytes(image_data, max_size, quality):
+    """Конвертирует любое изображение в WebP и сжимает"""
+    image = Image.open(BytesIO(image_data))
+    
+    if image.mode in ("RGBA", "P"):
+        image = image.convert("RGB")
+    
+    image.thumbnail(max_size, Image.LANCZOS)
+    img_byte_arr = BytesIO()
+    
+    image.save(img_byte_arr, format='WEBP', quality=quality, method=6)
+    return img_byte_arr.getvalue()
+
 def upload_to_business_bucket(file_data, business_id, card_id, filename, is_lazy=False):
     """Загружает файл в папку business_id/products/"""
     try:
-        # Формируем путь в твоей структуре
         folder = f"{business_id}/products"
         if is_lazy:
             folder = f"{business_id}/products/lazy"
         
         path = f"{folder}/{filename}"
         
-        # Загружаем файл
         response = supabase.storage.from_(BUCKET_NAME).upload(
             path,
             file_data,
-            {"content-type": "image/webp", "upsert": 'true'}  # upsert перезаписывает если существует
+            {"content-type": "image/webp", "upsert": 'true'}
         )
         
-        # Получаем публичный URL
         public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(path)
         
         return public_url
     except Exception as e:
         print(f"Error uploading to Supabase Storage: {e}")
         return None
-    
+
+@app.route('/api/business/check-owner/<string:business_id>', methods=['GET'])
+def check_business_owner_endpoint(business_id):
+    """
+    Проверяет, является ли текущий пользователь владельцем бизнеса
+    Ожидает параметр user_id в query string
+    """
+    try:
+        user_id = request.args.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'user_id is required'}), 400
+        
+        business_info = check_business_owner(business_id, int(user_id))
+        
+        if not business_info:
+            return jsonify({'error': 'Business not found'}), 404
+        
+        return jsonify(business_info)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -84,6 +213,7 @@ def serve(path):
     else:
         return send_from_directory(app.static_folder, 'index.html')
 
+# WebSocket события
 @socketio.on('connect')
 def handle_connect():
     print('A user connected')
@@ -389,7 +519,7 @@ def handle_message(message):
         print(f"Error: {e}")
         emit('message', json.dumps(['error', str(e)]))
 
-# REST API endpoints для совместимости
+# REST API endpoints
 @app.route('/api/cards', methods=['GET'])
 def get_cards():
     try:
@@ -411,13 +541,11 @@ def get_card(card_id):
 @app.route('/api/cards/<int:card_id>/increment-views', methods=['POST'])
 def increment_views(card_id):
     try:
-        # Получаем текущее значение
         response = supabase.table('cards').select('views_count').eq('id', card_id).execute()
         if not response.data:
             return jsonify({'error': 'Not found'}), 404
         
         current_views = response.data[0]['views_count']
-        # Увеличиваем на 1
         supabase.table('cards').update({'views_count': current_views + 1}).eq('id', card_id).execute()
         return jsonify({'success': True})
     except Exception as e:

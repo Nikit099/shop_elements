@@ -6,7 +6,7 @@ import { useMainContext } from '../context';
 import { useSpringRef, animated, useSpring } from '@react-spring/web';
 
 function Main() {
-  const { sendMessage, message, setMessage, theme, setTheme, businessId } = useMainContext();
+  const { sendMessage, message, setMessage, theme, setTheme,isBusinessOwner, loading, businessId } = useMainContext();
   const wrapperApi = useSpringRef();
   const wrapperProps = useSpring({
     ref: wrapperApi,

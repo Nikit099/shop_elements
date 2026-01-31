@@ -53,7 +53,7 @@ function Post({ postData, type, parent, basePathUrl }) {
   })
   const scrollY = useRef();
   const toggle = () => {
-    window.history.replaceState({}, '', '/card/' + data._id);
+    window.history.replaceState({}, '', `/${businessId}/card/${data._id}`);
     // sendMessage(JSON.stringify(["cards", "filter", {"category": "Розы с любовью" }, 6]))
     // sendMessage(JSON.stringify(["cards", "filter", {"category": "Подарки"}, 6]))
     api.start({ transform: "scale(1.05)", config: { duration: 200 } });
@@ -100,9 +100,9 @@ function Post({ postData, type, parent, basePathUrl }) {
         modalMainRef.current.style.top = `${e.touches[0].screenY - touchStartY}px`;
         if (modalMainRef.current?.getBoundingClientRect().top > window.innerHeight * .4) {
           if (!parent) {
-            window.history.replaceState({}, '', basePathUrl);
+            window.history.replaceState({}, '', `/${businessId}${basePathUrl}`);
           } else {
-            window.history.replaceState({}, '', '/card/' + parent._id);
+            window.history.replaceState({}, '', `/${businessId}/card/${parent._id}`);
           }
           setPosts([]);
           closing.current = true;
@@ -461,11 +461,11 @@ function Post({ postData, type, parent, basePathUrl }) {
                     <img src={require("../components/images/share-white.svg").default} alt="" style={{marginBottom: 0, height: 40}} />
                     Поделиться
                   </div>
-                  {/* {(account.user?.username === "thecreatxr" || account.user?.username === "Mr_Romadanov") &&
-                  <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
-                    window.history.replaceState({}, '', basePathUrl + "?card_id=" + data._id);
-                    setPosts([]);
-                    document.querySelector("html").style.overflow = "auto";
+                    {/* {(account.user?.username === "thecreatxr" || account.user?.username === "Mr_Romadanov") &&
+  <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
+    window.history.replaceState({}, '', `/${businessId}${basePathUrl}?card_id=${data._id}`);
+    setPosts([]);
+    document.querySelector("html").style.overflow = "auto";
                     document.querySelector("body").style.overflow = "auto";
                     document.querySelector("body").style.position = "relative";
                     document.querySelector("body").style.top = "0px";
@@ -475,10 +475,10 @@ function Post({ postData, type, parent, basePathUrl }) {
                     <img src={require("./images/settings.svg").default} alt="" style={{marginBottom: 0, height: 40}} />
                     Настройки
                   </div>} */}
-                   <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
-                    window.history.replaceState({}, '', basePathUrl + "?card_id=" + data._id);
-                    setPosts([]);
-                    document.querySelector("html").style.overflow = "auto";
+                      <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
+    window.history.replaceState({}, '', `/${businessId}${basePathUrl}?card_id=${data._id}`);
+    setPosts([]);
+    document.querySelector("html").style.overflow = "auto";
                     document.querySelector("body").style.overflow = "auto";
                     document.querySelector("body").style.position = "relative";
                     document.querySelector("body").style.top = "0px";
@@ -736,10 +736,10 @@ function Post({ postData, type, parent, basePathUrl }) {
                           <img src={require("../screens/images/add-to-cart.svg").default} alt="" style={{width: "100%", height: "100%", objectFit: "cover"}} />
                         </div>
                       </div>
-                      <Button text={"Просмотреть корзину (" + cartItems.map(item => item.count).reduce((total, count) => total + count, 0) + ")"}  handleClick={(e) => {
-                        window.history.replaceState({}, '', basePathUrl + "?card_id=" + data._id);
-                        setPosts([]);
-                        document.querySelector("html").style.overflow = "auto";
+                        <Button text={"Просмотреть корзину (" + cartItems.map(item => item.count).reduce((total, count) => total + count, 0) + ")"}  handleClick={(e) => {
+    window.history.replaceState({}, '', `/${businessId}${basePathUrl}?card_id=${data._id}`);
+    setPosts([]);
+    document.querySelector("html").style.overflow = "auto";
                         document.querySelector("body").style.overflow = "auto";
                         document.querySelector("body").style.position = "relative";
                         document.querySelector("body").style.top = "0px";
@@ -779,3 +779,4 @@ function Post({ postData, type, parent, basePathUrl }) {
 }
 
 export default Post;
+

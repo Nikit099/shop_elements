@@ -16,7 +16,7 @@ const validationSchema = Yup.object().shape({
     .max(100, 'Макс. длина 100')
 });
 
-function AddPrice({ prices, setPrices }) {
+function AddPrice({ prices = [], setPrices }) {
   const [ inputs, setInputs ] = useState({
     "price": {
       value: null,
@@ -216,10 +216,10 @@ function AddPrice({ prices, setPrices }) {
             </div>
         </animated.div>
         <div style={{display: "flex", flexFlow: "column", gap: 10}}>
-          {prices.map((price, index) => (
-            <EditPrice price={price} prices={prices} setPrices={setPrices} index={index} key={index}/>
-          ))}
-        </div>
+  {(prices || []).map((price, index) => (
+    <EditPrice price={price} prices={prices || []} setPrices={setPrices} index={index} key={index}/>
+  ))}
+</div>
         
       {isOpen &&
         <animated.div style={{

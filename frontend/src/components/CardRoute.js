@@ -1,10 +1,18 @@
 import React from 'react';
-import { Route, Navigate, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 function CardRoute() {
-  const { id } = useParams();
+  const { bId, id } = useParams();
+  const navigate = useNavigate();
 
-  return <Navigate to={`/search?card_id=${id}`} replace />;
+  useEffect(() => {
+    // Используем replace: false чтобы не заменять текущую запись в истории
+    // и добавляем параметр card_id к текущему URL
+    navigate(`/${bId}/search?card_id=${id}`, { replace: false });
+  }, [bId, id, navigate]);
+
+  return null; // или можно вернуть <Loading />
 }
 
 export default CardRoute;

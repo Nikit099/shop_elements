@@ -12,6 +12,7 @@ import AddPrice from '../components/AddPrice';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import createNumberMask from 'text-mask-addons/dist/createNumberMask';
+// import { useBusinessOwner } from '../hooks/useBusinessOwner';
 
 const validationSchema = Yup.object().shape({
   "category": Yup.string()
@@ -24,7 +25,7 @@ const validationSchema = Yup.object().shape({
 
 function Add() {
   const navigate = useNavigate();
-  const { sendMessage, message, setMessage, account, businessId } = useMainContext();
+  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading } = useMainContext();
   const imagesDivRef = useRef();
   const [ images, setImages ] = useState([]);
   const [ activeImage, setActiveImage ] = useState(0);
@@ -90,64 +91,10 @@ function Add() {
     // },
   });
   const [ saving, setSaving ] = useState(false);
-  useEffect(() => {
-    window.scrollTo({top: 0});
-  }, [])
-  const handleSubmit = (values) => {
-    if (images.length === 0) {
-      setPhotosError("Добавьте хотя бы 1 фотографию");
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return
-    }
-    if (values["category"] === "Розы с любовью") {
-      values["colors"] = selectedColors;
-      values["counts"] = selectedCounts;
-      // values["packages"] = selectedPackages;
-      values["sizes"] = selectedSizes;
-      values["prices"] = prices;
-      values["image_color"] = [];
-      for (let i = 0; i < images?.length; i++) {
-        const image = images[i];
-        if (image.color) {
-          values["image_color"].push({index: i, color: image.color})
-        }
-        if (image.count) {
-          values["image_color"].push({index: i, count: image.count})
-        }
-      }
-    } else {
-      delete values["colors"];
-      delete values["counts"];
-      delete values["packages"];
-      delete values["sizes"];
-      delete values["prices"];
-      delete values["image_color"];
-    }
-    sendMessage(JSON.stringify(["cards", "create", values, account, businessId]));
-    setSaving(true);
-  }
-  useEffect(() => {
-    if (message && window.location.pathname === `/${businessId}/add`) {
-      if (message[0] === "cards") {
-        if (message[1] === "created") {
-          setCardId(message[2]);
-        }
-      } else if (message[0] === "images") {
-        if (message[1] === "added") {
-          indexOfLoadedImage.current = message[2];
-        }
-      }
-      setMessage(null);
-    };
-  }, [message]);
-  useEffect(() => {
-    if (cardId && indexOfLoadedImage.current + 1 <= images.length && images[indexOfLoadedImage.current + 1]) {
-      sendMessage(JSON.stringify(["images", "add", cardId, indexOfLoadedImage.current + 1, images[indexOfLoadedImage.current + 1].file, businessId]));
-    } else if (cardId) {
-      setSaving(false);
-      navigate(`/${businessId}/search?card_id=`  + cardId, { replace: true });
-    }
-  }, [cardId, indexOfLoadedImage.current])
+  
+  // Удаляем лишние переменные из контекста, которые не используются
+  // const { isBusinessOwner, loading} = useMainContext();
+  
   const colors = [
     "Белые",
     "Красные",
@@ -189,6 +136,83 @@ function Add() {
   ]
   const [ selectedPackages, setSelectedPackages ] = useState([]);
   const [ prices, setPrices ] = useState([]);
+  
+  useEffect(() => {
+    window.scrollTo({top: 0});
+  }, [])
+  
+  useEffect(() => {
+    if (message && window.location.pathname === `/${businessId}/add`) {
+      if (message[0] === "cards") {
+        if (message[1] === "created") {
+          setCardId(message[2]);
+        }
+      } else if (message[0] === "images") {
+        if (message[1] === "added") {
+          indexOfLoadedImage.current = message[2];
+        }
+      }
+      setMessage(null);
+    };
+  }, [message, businessId, setMessage]);
+  
+  useEffect(() => {
+    if (cardId && indexOfLoadedImage.current + 1 <= images.length && images[indexOfLoadedImage.current + 1]) {
+      sendMessage(JSON.stringify(["images", "add", cardId, indexOfLoadedImage.current + 1, images[indexOfLoadedImage.current + 1].file, businessId]));
+    } else if (cardId) {
+      setSaving(false);
+      navigate(`/${businessId}/search?card_id=`  + cardId, { replace: true });
+    }
+  }, [cardId, indexOfLoadedImage.current, images, businessId, navigate, sendMessage])
+  
+  // Проверка прав доступа
+  if (loading) return <div>Проверка прав доступа...</div>;
+
+  if (!isBusinessOwner) {
+    return (
+      <div className="view">
+        <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+          <h2>Доступ запрещен</h2>
+          <p>У вас нет прав для создания товаров</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const handleSubmit = (values) => {
+    if (images.length === 0) {
+      setPhotosError("Добавьте хотя бы 1 фотографию");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return
+    }
+    if (values["category"] === "Розы с любовью") {
+      values["colors"] = selectedColors;
+      values["counts"] = selectedCounts;
+      // values["packages"] = selectedPackages;
+      values["sizes"] = selectedSizes;
+      values["prices"] = prices;
+      values["image_color"] = [];
+      for (let i = 0; i < images?.length; i++) {
+        const image = images[i];
+        if (image.color) {
+          values["image_color"].push({index: i, color: image.color})
+        }
+        if (image.count) {
+          values["image_color"].push({index: i, count: image.count})
+        }
+      }
+    } else {
+      delete values["colors"];
+      delete values["counts"];
+      delete values["packages"];
+      delete values["sizes"];
+      delete values["prices"];
+      delete values["image_color"];
+    }
+    sendMessage(JSON.stringify(["cards", "create", values, account, businessId]));
+    setSaving(true);
+  }
+  
   return (
     <div className="view">
       <Formik

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестовая авторизация</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .info-box {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #dee2e6;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .status {
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .token-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            word-break: break-all;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            button {
+                min-width: 100%;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Тестовая авторизация</h1>
+        <p class="subtitle">Тестирование системы авторизации Telegram WebApp</p>
+        
+        <!-- Секция 1: Информация о текущей авторизации -->
+        <div class="section">
+            <h2>📊 Текущий статус</h2>
+            <div id="statusContainer">
+                <div class="status" id="authStatus">Не авторизован</div>
+            </div>
+            <div class="info-box">
+                <strong>API Endpoints:</strong><br>
+                • POST /api/auth/telegram - Telegram авторизация<br>
+                • POST /api/auth/refresh - Обновление токена<br>
+                • POST /api/auth/logout - Выход<br>
+                • GET /api/auth/me - Информация о пользователе<br>
+                • GET /api/shop/check-owner/{id} - Проверка владельца магазина
+            </div>
+        </div>
+        
+        <!-- Секция 2: Тестовая авторизация -->
+        <div class="section">
+            <h2>🧪 Тестовая авторизация</h2>
+            <p>Используйте эти кнопки для тестирования различных сценариев авторизации:</p>
+            
+            <div class="form-group">
+                <label for="businessId">Business ID (опционально):</label>
+                <input type="text" id="businessId" placeholder="Введите ID магазина для проверки прав">
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-primary" onclick="testTelegramAuth()">🔐 Тест Telegram Auth</button>
+                <button class="btn-secondary" onclick="testRefreshToken()">🔄 Обновить токен</button>
+                <button class="btn-success" onclick="testGetCurrentUser()">👤 Получить данные</button>
+                <button class="btn-danger" onclick="testLogout()">🚪 Выйти</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Текущий Access Token:</label>
+                <div class="token-display" id="accessTokenDisplay">Нет токена</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Текущий Refresh Token:</label>
+                <div class="token-display" id="refreshTokenDisplay">Нет токена</div>
+            </div>
+        </div>
+        
+        <!-- Секция 3: Тестовые пользователи -->
+        <div class="section">
+            <h2>👥 Тестовые пользователи</h2>
+            <p>Выберите тестового пользователя для авторизации:</p>
+            
+            <div class="button-group">
+                <button class="btn-primary" onclick="useTestUser('user')">👤 Обычный пользователь</button>
+                <button class="btn-success" onclick="useTestUser('shop_owner')">🏪 Владелец магазина</button>
+                <button class="btn-danger" onclick="useTestUser('admin')">👑 Администратор</button>
+            </div>
+            
+            <div class="info-box" id="currentTestUser">
+                Текущий тестовый пользователь: не выбран
+            </div>
+        </div>
+        
+        <!-- Секция 4: Проверка прав -->
+        <div class="section">
+            <h2>🔒 Проверка прав доступа</h2>
+            <div class="button-group">
+                <button class="btn-primary" onclick="checkShopOwner()">🏪 Проверить владельца магазина</button>
+                <button class="btn-secondary" onclick="testProtectedEndpoint()">🛡️ Тест защищенного эндпоинта</button>
+            </div>
+        </div>
+        
+        <!-- Секция 5: Результаты -->
+        <div class="section">
+            <h2>📋 Результаты запросов</h2>
+            <div class="result-box" id="resultBox">
+                Здесь будут отображаться результаты запросов...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Базовый URL API
+        const API_BASE_URL = 'http://localhost:8080/api';
+        
+        // Токены
+        let accessToken = localStorage.getItem('accessToken');
+        let refreshToken = localStorage.getItem('refreshToken');
+        let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        
+        // Тестовые данные пользователей
+        const testUsers = {
+            user: {
+                telegram_id: 123456789,
+                username: 'test_user',
+                first_name: 'Иван',
+                last_name: 'Тестовый',
+                language_code: 'ru',
+                is_premium: false,
+                role: 'user'
+            },
+            shop_owner: {
+                telegram_id: 987654321,
+                username: 'shop_owner',
+                first_name: 'Петр',
+                last_name: 'Владелец',
+                language_code: 'ru',
+                is_premium: true,
+                role: 'shop_owner',
+                owned_shop_id: 'shop_123'
+            },
+            admin: {
+                telegram_id: 555555555,
+                username: 'admin_user',
+                first_name: 'Админ',
+                last_name: 'Системный',
+                language_code: 'ru',
+                is_premium: true,
+                role: 'admin'
+            }
+        };
+        
+        let currentTestUser = null;
+        
+        // Обновление отображения статуса
+        function updateStatus() {
+            const authStatus = document.getElementById('authStatus');
+            const accessTokenDisplay = document.getElementById('accessTokenDisplay');
+            const refreshTokenDisplay = document.getElementById('refreshTokenDisplay');
+            
+            if (accessToken) {
+                authStatus.textContent = 'Авторизован';
+                authStatus.className = 'status status-success';
+                
+                // Показываем сокращенный токен
+                const shortAccessToken = accessToken.substring(0, 30) + '...';
+                const shortRefreshToken = refreshToken ? refreshToken.substring(0, 30) + '...' : 'Нет токена';
+                
+                accessTokenDisplay.textContent = shortAccessToken;
+                refreshTokenDisplay.textContent = shortRefreshToken;
+                
+                if (currentUser) {
+                    document.getElementById('currentTestUser').textContent = 
+                        `Текущий тестовый пользователь: ${currentUser.username} (${currentUser.role})`;
+                }
+            } else {
+                authStatus.textContent = 'Не авторизован';
+                authStatus.className = 'status';
+                accessTokenDisplay.textContent = 'Нет токена';
+                refreshTokenDisplay.textContent = 'Нет токена';
+                document.getElementById('currentTestUser').textContent = 
+                    'Текущий тестовый пользователь: не выбран';
+            }
+        }
+        
+        // Отображение результатов
+        function showResult(message, isError = false) {
+            const resultBox = document.getElementById('resultBox');
+            const timestamp = new Date().toLocaleTimeString();
+            const result = `[${timestamp}] ${isError ? '❌ ОШИБКА:' : '✅ УСПЕХ:'} ${message}`;
+            
+            resultBox.textContent = result + '\n' + resultBox.textContent;
+            
+            if (isError) {
+                resultBox.style.borderColor = '#dc3545';
+                setTimeout(() => {
+                    resultBox.style.borderColor = '#dee2e6';
+                }, 2000);
+            } else {
+                resultBox.style.borderColor = '#28a745';
+                setTimeout(() => {
+                    resultBox.style.borderColor = '#dee2e6';
+                }, 2000);
+            }
+        }
+        
+        // Генерация тестового initData
+        function generateTestInitData(userData) {
+            // В реальном приложении здесь должна быть правильная подпись
+            // Для тестов используем упрощенный вариант
+            const userString = JSON.stringify({
+                id: userData.telegram_id,
+                username: userData.username,
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                language_code: userData.language_code,
+                is_premium: userData.is_premium
+            });
+            
+            return `user=${encodeURIComponent(userString)}&auth_date=${Math.floor(Date.now() / 1000)}&hash=test_signature`;
+        }
+        
+        // Использование тестового пользователя
+        function useTestUser(userType) {
+            currentTestUser = testUsers[userType];
+            showResult(`Выбран тестовый пользователь: ${currentTestUser.username} (${currentTestUser.role})`);
+            updateStatus();
+        }
+        
+        // Тест Telegram авторизации
+        async function testTelegramAuth() {
+            if (!currentTestUser) {
+                showResult('Сначала выберите тестового пользователя!', true);
+                return;
+            }
+            
+            const businessId = document.getElementById('businessId').value;
+            
+            try {
+                const initData = generateTestInitData(currentTestUser);
+                
+                const response = await fetch(`${API_BASE_URL}/auth/telegram`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        initData: initData,
+                        businessId: businessId || null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    accessToken = data.access_token;
+                    refreshToken = data.refresh_token;
+                    currentUser = data.user;
+                    
+                    // Сохраняем в localStorage
+                    localStorage.setItem('accessToken', accessToken);
+                    localStorage.setItem('refreshToken', refreshToken);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    
+                    showResult(`Успешная авторизация! Пользователь: ${currentUser.username}, Роль: ${currentUser.role}`);
+                    updateStatus();
+                } else {
+                    showResult(`Ошибка авторизации: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult(`Ошибка сети: ${error.message}`, true);
+            }
+        }
+        
+        // Обновление токена
+        async function testRefreshToken() {
+            if (!refreshToken) {
+                showResult('Нет refresh токена для обновления!', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${refreshToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    accessToken = data.access_token;
+                    currentUser = data.user;
+                    
+                    localStorage.setItem('accessToken', accessToken);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    
+                    showResult('Токен успешно обновлен!');
+                    updateStatus();
+                } else {
+                    showResult(`Ошибка обновления токена: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult(`Ошибка сети: ${error.message}`, true);
+            }
+        }
+        
+        // Получение данных текущего пользователя
+        async function testGetCurrentUser() {
+            if (!accessToken) {
+                showResult('Сначала авторизуйтесь!', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`Данные пользователя: ${JSON.stringify(data.user, null, 2)}`);
+                } else {
+                    showResult(`Ошибка получения данных: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult(`Ошибка сети: ${error.message}`, true);
+            }
+        }
+        
+        // Выход
+        async function testLogout() {
+            if (!accessToken) {
+                showResult('Вы не авторизованы!', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    // Очищаем токены
+                    accessToken = null;
+                    refreshToken = null;
+                    currentUser = null;
+                    currentTestUser = null;
+                    
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                                        localStorage.removeItem('currentUser');
+                    
+                    showResult('Успешный выход из системы');
+                    updateStatus();
+                } else {
+                    const data = await response.json();
+                    showResult(`Ошибка выхода: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult(`Ошибка сети: ${error.message}`, true);
+            }
+        }
+        
+        // Проверка владельца магазина
+        async function checkShopOwner() {
+            if (!accessToken) {
+                showResult('Сначала авторизуйтесь!', true);
+                return;
+            }
+            
+            const businessId = document.getElementById('businessId').value || 'shop_123';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/shop/check-owner/${businessId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.is_owner) {
+                        showResult(`✅ Вы являетесь владельцем магазина ${businessId}`);
+                    } else {
+                        showResult(`❌ Вы НЕ являетесь владельцем магазина ${businessId}`);
+                    }
+                } else {
+                    showResult(`Ошибка проверки прав: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult(`Ошибка сети: ${error.message}`, true);
+            }
+        }
+        
+        // Тест защищенного эндпоинта
+        async function testProtectedEndpoint() {
+            if (!accessToken) {
+                showResult('Сначала авторизуйтесь!', true);
+                return;
+            }
+            
+            try {
+                // Тестируем получение карточек (публичный эндпоинт)
+                const response = await fetch(`${API_BASE_URL}/cards`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ Успешный доступ к защищенному эндпоинту. Получено карточек: ${data.length || 0}`);
+                } else {
+                    showResult(`❌ Ошибка доступа: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult(`Ошибка сети: ${error.message}`, true);
+            }
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus();
+            
+            // Проверяем, есть ли сохраненные токены
+            if (accessToken) {
+                showResult('Найдены сохраненные токены. Вы авторизованы.');
+                
+                // Автоматически выбираем соответствующего тестового пользователя
+                if (currentUser) {
+                    const userType = Object.keys(testUsers).find(
+                        key => testUsers[key].telegram_id === currentUser.telegram_id
+                    );
+                    if (userType) {
+                        currentTestUser = testUsers[userType];
+                    }
+                }
+            } else {
+                showResult('Добро пожаловать! Выберите тестового пользователя и нажмите "Тест Telegram Auth"');
+            }
+            
+            // Добавляем обработчики для демонстрации токенов
+            document.getElementById('accessTokenDisplay').addEventListener('click', function() {
+                if (accessToken) {
+                    navigator.clipboard.writeText(accessToken).then(() => {
+                        alert('Access Token скопирован в буфер обмена!');
+                    });
+                }
+            });
+            
+            document.getElementById('refreshTokenDisplay').addEventListener('click', function() {
+                if (refreshToken) {
+                    navigator.clipboard.writeText(refreshToken).then(() => {
+                        alert('Refresh Token скопирован в буфер обмена!');
+                    });
+                }
+            });
+            
+            // Добавляем подсказки для полей ввода
+            document.getElementById('businessId').addEventListener('focus', function() {
+                this.placeholder = 'Например: shop_123, business_456';
+            });
+            
+            document.getElementById('businessId').addEventListener('blur', function() {
+                this.placeholder = 'Введите ID магазина для проверки прав';
+            });
+        });
+        
+        // Глобальные функции для кнопок
+        window.testTelegramAuth = testTelegramAuth;
+        window.testRefreshToken = testRefreshToken;
+        window.testGetCurrentUser = testGetCurrentUser;
+        window.testLogout = testLogout;
+        window.useTestUser = useTestUser;
+        window.checkShopOwner = checkShopOwner;
+        window.testProtectedEndpoint = testProtectedEndpoint;
+    </script>
+</body>
+</html>

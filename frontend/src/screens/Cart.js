@@ -314,7 +314,7 @@ function Cart() {
             setTimeout(() => {
                 setSended(false);
                 setCartItems([]);
-                navigate(`/${businessId}` );
+                navigate(`/${businessId}`, { replace: true });
             }, 6000)
         }
     }, [sended])
@@ -347,13 +347,13 @@ function Cart() {
         return (
             <div className="view">
                 <div style={{borderBottom: "0.5px solid #18181A", marginLeft: -15, width: "100vw"}}>
-                    <div style={{padding: "0 15px"}}>
+                    <div style={{padding: "0 15px", color: '#18181A'}}>
                         <Title text="Информация о вашем заказе" />
                     </div>
                 </div>
                 <div style={{display: "flex", flexFlow: "column", rowGap: 20, marginTop: 20}}>
                     {cartItems.map((item, index) => (
-                        <div style={{borderBottom: "0.5px solid #18181A", paddingBottom: 20, position: "relative", display: "flex", columnGap: 14, alignItems: "flex-start"}}>
+                        <div style={{borderBottom: "0.5px solid #222222ff", paddingBottom: 20, position: "relative", display: "flex", columnGap: 14, alignItems: "flex-start"}}>
                             <div style={{width: 80, height: 80, flexShrink: 0}}>
                                 <LazyLoadImage src={item.product.images[item.product.image_color?.find((o) => o.color === item.product.selectedColor || o.count === item.product.selectedCount)?.index || 0].file} placeholderSrc={item.product.images[item.product.image_color?.find((o) => o.color === item.product.selectedColor || o.count === item.product.selectedCount)?.index || 0].file_lazy} alt="" style={{width: "100%", height: "100%", objectFit: "cover", borderRadius: 9}} />
                             </div>
@@ -387,7 +387,7 @@ function Cart() {
                                         </div>
                                     </div>
                                     <div style={{marginLeft: "auto", display: "flex", flexFlow: "column", alignItems: "flex-end", marginTop: "auto", gap: 5}}>
-                                        <div style={{fontSize: 15, fontWeight: 300, color: "#fff"}}>{multiplyPrice(getPrice(index), item.count)} ₽</div>
+                                        <div style={{fontSize: 15, fontWeight: 300, color: "#FFFFFF"}}>{multiplyPrice(getPrice(index), item.count)} ₽</div>
                                         {item.count > 1 &&
                                         <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93"}}>{getPrice(index)} / шт</div>}
                                     </div>
@@ -412,8 +412,8 @@ function Cart() {
                     </div>
                 </div>}
                 <div style={{display: "flex", justifyContent: "space-between", padding: "10px 0"}}>
-                    <div style={{fontSize: 18, fontWeight: 300, color: "#fff"}}>Сумма</div>
-                    <div style={{fontSize: 18, fontWeight: 300, color: "#fff"}}>{total} ₽</div>
+                    <div style={{fontSize: 18, fontWeight: 300, color: "#FFFFFF"}}>Сумма</div>
+                    <div style={{fontSize: 18, fontWeight: 300, color: "#FFFFFF"}}>{total} ₽</div>
                 </div>
                 <div style={{fontSize: 14, fontWeight: 300, color: "#bbb"}}>
                     Минимальное время сборки и доставки - 2 часа.
@@ -446,7 +446,7 @@ function Cart() {
                                 <FormLIGHT inputs={Object.entries(inputs).slice(0, 1)} setInputs={setInputs} errors={errors} touched={touched} />
                                 {values.delivery === "Самовывоз" &&
                                 <div style={{fontSize: 14, fontWeight: 300, color: "#bbb"}}>
-                                    Можно будет забрать по адресу: <span style={{color: "#fff"}}>г.Сочи, ул. Горького, 89 Б</span>    
+                                    Можно будет забрать по адресу: <span style={{color: "#FFFFFF"}}>г.Сочи, ул. Горького, 89 Б</span>    
                                 </div>}
                                 {values.delivery === "Курьером" &&
                                 <>
@@ -460,7 +460,7 @@ function Cart() {
                                 <FormLIGHT inputs={Object.entries(inputs).slice(12, 15)} setInputs={setInputs} errors={errors} touched={touched} />
                                 <div style={{display: "flex", flexFlow: "column", gap: 10}}>
                                     <div style={{display: "flex", justifyContent: "space-between"}}>
-                                        <div style={{fontSize: 18, fontWeight: 300, color: "#fff"}}>Ваш заказ</div>
+                                        <div style={{fontSize: 18, fontWeight: 300, color: "#FFFFFF"}}>Ваш заказ</div>
                                     </div>     
                                 </div>
                                 <div style={{display: "flex", flexFlow: "column", rowGap: 20}}>
@@ -482,7 +482,7 @@ function Cart() {
                                                 </div>
                                                 <div style={{display: "flex", justifyContent: "flex-start", width: "100%", marginTop: 5}}>
                                                     <div style={{marginLeft: "auto", display: "flex", flexFlow: "column", alignItems: "flex-end", gap: 5}}>
-                                                        <div style={{fontSize: 15, fontWeight: 300, color: "#fff"}}>{multiplyPrice(getPrice(index), item.count)} ₽</div>
+                                                        <div style={{fontSize: 15, fontWeight: 300, color: "#FFFFFF"}}>{multiplyPrice(getPrice(index), item.count)} ₽</div>
                                                         {item.count > 1 &&
                                                         <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93"}}>{getPrice(index)} / шт</div>}
                                                     </div>
@@ -493,8 +493,8 @@ function Cart() {
                                 </div>
                                 <div style={{display: "flex", flexFlow: "column", gap: 10}}>
                                     <div style={{display: "flex", justifyContent: "space-between"}}>
-                                        <div style={{fontSize: 18, fontWeight: 300, color: "#fff"}}>Итого</div>
-                                        <div style={{fontSize: 18, fontWeight: 300, color: "#fff"}}>{total} ₽</div>
+                                        <div style={{fontSize: 18, fontWeight: 300, color: "#FFFFFF"}}>Итого</div>
+                                        <div style={{fontSize: 18, fontWeight: 300, color: "#FFFFFF"}}>{total} ₽</div>
                                     </div>     
                                 </div>
                                 <Button text="Подтвердить заказ" handleClick={handleSubmit} style={{
@@ -504,8 +504,7 @@ function Cart() {
                                     height: 44,
                                     display: "flex",
                                     alignItems: "center",
-                                    justifyContent: "center",
-                                    background: "#323234"
+                                    justifyContent: "center"
                                 }} />
                             </div>
                             <ScrollToError/>
@@ -514,9 +513,9 @@ function Cart() {
                     </Formik>  
                 </div>
                 {sended && <SendedHover handleClose={() => {
-                    setSended(false);
-                    setCartItems([]);
-                    navigate(`/${businessId}`);
+                                    setSended(false);
+                setCartItems([]);
+                navigate(`/${businessId}`, { replace: true });
                 }}/>}
             </div>
         );
@@ -540,8 +539,7 @@ function Cart() {
                         height: 44,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        background: "#323234"
+                        justifyContent: "center"
                     }} />
                 </div>
             </div>

@@ -1,6 +1,3 @@
-import styles from '../screens/styles/Post.module.css';
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSpringRef, animated, useSpring } from '@react-spring/web';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import Slider from './Slider';
@@ -9,8 +6,9 @@ import Button from './Button';
 import Hint from './Hint';
 import Contact from './Contact';
 import { useMainContext } from '../context';
-import { display } from '@mui/system';
-
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styles from './styles/Post.module.css';
 function multiplyPrice(priceString, multiplier) {
   // Удаляем все символы, кроме цифр и пробелов, из строки цены
   const cleanedPriceString = priceString.replace(/[^\d\s]/g, '');
@@ -24,10 +22,10 @@ function multiplyPrice(priceString, multiplier) {
   return `${formattedAmount}`;
 }
 
-function Post({ postData, type, parent, basePathUrl }) {
+function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) {
   const navigate = useNavigate();
   const [ data, setData ] = useState(postData);
-  const { sendMessage, message, setMessage, cartItems, setCartItems, account, theme, businessId } = useMainContext();
+  const { sendMessage, message, setMessage, cartItems, setCartItems, account, theme, businessId, isBusinessOwner } = useMainContext();
   const postDivRef = useRef();
   const [ isOpenPost, setIsOpenPost ] = useState(false);
   const api = useSpringRef();
@@ -52,15 +50,44 @@ function Post({ postData, type, parent, basePathUrl }) {
     from: { bottom: "-40vh" },
   })
   const scrollY = useRef();
-  const toggle = () => {
-    window.history.replaceState({}, '', `/${businessId}/card/${data._id}`);
-    // sendMessage(JSON.stringify(["cards", "filter", {"category": "Розы с любовью" }, 6]))
-    // sendMessage(JSON.stringify(["cards", "filter", {"category": "Подарки"}, 6]))
-    api.start({ transform: "scale(1.05)", config: { duration: 200 } });
-    setTimeout(() => {
-      api.start({ transform: "scale(1)", config: { duration: 200 } });
-    }, 200);
+
+  // Восстановление скроллинга при размонтировании компонента
+  useEffect(() => {
+    return () => {
+      // Восстанавливаем скроллинг при размонтировании компонента
+      if (!parent) {
+        document.querySelector("html").style.overflow = "auto";
+        document.querySelector("body").style.overflow = "auto";
+        document.querySelector("body").style.position = "relative";
+        document.querySelector("body").style.top = "0px";
+      }
+    };
+  }, []);
+
+  // Автоматическое открытие модального окна при загрузке (для страницы карточки)
+  useEffect(() => {
+    if (shouldOpenModal && !isOpenPost) {
+      // Автоматически открываем модальное окно без анимации клика
+      setTimeout(() => {
+        toggle(true);
+      }, 100);
+    }
+  }, [shouldOpenModal]);
+  const toggle = (skipAnimation = false) => {
+    if (!skipAnimation) {
+      api.start({ transform: "scale(1.05)", config: { duration: 200 } });
+      setTimeout(() => {
+        api.start({ transform: "scale(1)", config: { duration: 200 } });
+      }, 200);
+    }
+    
     if (!isOpenPost) {
+      // При открытии модального окна обновляем URL с параметром card_id
+      if (!parent) {
+        const newUrl = `/${businessId}${basePathUrl || ''}?card_id=${data._id}`;
+        window.history.pushState({}, '', newUrl);
+      }
+      
       modalApi.start({ backdropFilter: "blur(0.5vh)", WebkitBackdropFilter: "blur(0.5vh)", background: "rgba(0, 0, 0, .4)", config: { duration: 300 } });
       setTimeout(() => {
         modalApiMain.start({ top: "0vh", config: { duration: 300 } });
@@ -75,6 +102,12 @@ function Post({ postData, type, parent, basePathUrl }) {
           document.querySelector("body").style.position = "fixed";
         }
       }, 300)
+    } else {
+      // При закрытии модального окна восстанавливаем URL без параметра
+      if (!parent) {
+        const cleanUrl = `/${businessId}${basePathUrl || ''}`;
+        window.history.replaceState({}, '', cleanUrl);
+      }
     }
     setIsOpenPost(!isOpenPost);
   }
@@ -94,16 +127,17 @@ function Post({ postData, type, parent, basePathUrl }) {
   const handleTouchStart = (e) => {
     setTouchStartY(e.touches[0].screenY);
   }
-  const handleTouchMove = (e) => {
+    const handleTouchMove = (e) => {
     if (modalMainRef.current && !closing.current) {
       if (touchStartY < e.touches[0].screenY) {
         modalMainRef.current.style.top = `${e.touches[0].screenY - touchStartY}px`;
         if (modalMainRef.current?.getBoundingClientRect().top > window.innerHeight * .4) {
+          // При закрытии модального окна восстанавливаем URL без параметра
           if (!parent) {
-            window.history.replaceState({}, '', `/${businessId}${basePathUrl}`);
-          } else {
-            window.history.replaceState({}, '', `/${businessId}/card/${parent._id}`);
+            const cleanUrl = `/${businessId}${basePathUrl || ''}`;
+            window.history.replaceState({}, '', cleanUrl);
           }
+          
           setPosts([]);
           closing.current = true;
           modalApiMain.set({ top: `${e.touches[0].screenY - touchStartY}px`})
@@ -275,13 +309,10 @@ function Post({ postData, type, parent, basePathUrl }) {
     };
     setData(prevState => ({...prevState, selectedColor: selectedColor, selectedCount: selectedCount, selectedPackage: selectedPackage, selectedSize: selectedSize }))
   }, [divCountItemsCartRef.current])
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const cardId = searchParams.get('card_id');
-    if (cardId === data._id) {
-      toggle();
-    }
-  }, [])
+
+
+
+
   return (
     <>
       {type === "block" &&
@@ -379,7 +410,7 @@ function Post({ postData, type, parent, basePathUrl }) {
               <LazyLoadImage src={data.images[0]?.file} placeholderSrc={data.images[0]?.file_lazy} style={{width: "100%", height: "100%", objectFit: "cover"}} />
             </div>
             <div style={{width: "calc(100% - 20px)", display: "flex", flexFlow: "column", rowGap: 5, padding: "60px 10px 10px 10px", position: "absolute", bottom: 0, left: 0, background: "linear-gradient(to top, rgba(24, 24, 26, .9) 10%, rgba(24, 24, 26, 0) 100%)"}}>
-              <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: theme === "Dark" ? "#fff" : "#fff"}}>{data.title}</div>
+                              <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: theme === "Dark" ? "#fff" : "#fff"}}>{data.title}</div>
               <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93", marginTop: "auto"}}>{data.price}</div>
             </div>
           </div>
@@ -391,7 +422,7 @@ function Post({ postData, type, parent, basePathUrl }) {
               <LazyLoadImage src={data.images[0]?.file} placeholderSrc={data.images[0]?.file_lazy} style={{width: "100%", height: "100%", objectFit: "cover"}} />
             </div>
             <div style={{width: "calc(100% - 20px)", display: "flex", flexFlow: "column", rowGap: 5, padding: "60px 10px 10px 10px", position: "absolute", bottom: 0, left: 0, background: "linear-gradient(to top, rgba(24, 24, 26, .9) 10%, rgba(24, 24, 26, 0) 100%)"}}>
-              <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: theme === "Dark" ? "#fff" : "#fff"}}>{data.title}</div>
+                              <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: theme === "Dark" ? "#fff" : "#fff"}}>{data.title}</div>
               <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93", marginTop: "auto"}}>{data.price}</div>
             </div>
           </div>
@@ -411,7 +442,7 @@ function Post({ postData, type, parent, basePathUrl }) {
             overflowY: "auto",
             overflowX: "hidden",
           }}>
-            <animated.div style={{background: "linear-gradient(to top, rgba(0, 0, 0, 1) 50%, rgba(26, 24, 24, 1) 100%)", 
+            <animated.div style={{background: "linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(26, 24, 24, 1) 100%)", 
                                   width: "100vw",
                                   minHeight: "100vh",
                                   paddingBottom: 300,
@@ -445,7 +476,7 @@ function Post({ postData, type, parent, basePathUrl }) {
                     <img src={require("../components/images/like.svg").default} alt="" />
                     Избранное
                   </div> */}
-                  <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
+                  <div className={styles.action} style={{color: "#FFFFFF", fontSize: 9, fontWeight: 100}} onClick={() => {
                     if (navigator.share) {
                       navigator.share({
                         title: data.title,
@@ -462,7 +493,7 @@ function Post({ postData, type, parent, basePathUrl }) {
                     Поделиться
                   </div>
                     {/* {(account.user?.username === "thecreatxr" || account.user?.username === "Mr_Romadanov") &&
-  <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
+  <div className={styles.action} style={{color: "#FFFFFF", fontSize: 9, fontWeight: 100}} onClick={() => {
     window.history.replaceState({}, '', `/${businessId}${basePathUrl}?card_id=${data._id}`);
     setPosts([]);
     document.querySelector("html").style.overflow = "auto";
@@ -475,19 +506,15 @@ function Post({ postData, type, parent, basePathUrl }) {
                     <img src={require("./images/settings.svg").default} alt="" style={{marginBottom: 0, height: 40}} />
                     Настройки
                   </div>} */}
-                      <div className={styles.action} style={{color: "#fff", fontSize: 9, fontWeight: 100}} onClick={() => {
-    window.history.replaceState({}, '', `/${businessId}${basePathUrl}?card_id=${data._id}`);
-    setPosts([]);
-    document.querySelector("html").style.overflow = "auto";
-                    document.querySelector("body").style.overflow = "auto";
-                    document.querySelector("body").style.position = "relative";
-                    document.querySelector("body").style.top = "0px";
-                    setIsOpenPost(false);
-                    navigate(`/${businessId}/edit/` + data._id);
-                  }}>
-                    <img src={require("./images/settings.svg").default} alt="" style={{marginBottom: 0, height: 40}} />
-                    Настройки
-                  </div>
+                      {isBusinessOwner && (
+                        <div className={styles.action} style={{color: "#FFFFFF", fontSize: 9, fontWeight: 100}} onClick={() => {
+                          setIsOpenPost(false);
+                          navigate(`/${businessId}/edit/` + data._id);
+                        }}>
+                          <img src={require("./images/settings.svg").default} alt="" style={{marginBottom: 0, height: 40}} />
+                          Настройки
+                        </div>
+                      )}
                 </div>
               </div>
               <div style={{fontSize: 18, fontWeight: 200, padding: "10px 15px 30px 15px"}}>{!newPrice ? data.price : newPrice.price}</div>
@@ -548,7 +575,7 @@ function Post({ postData, type, parent, basePathUrl }) {
                             justifyContent: "center",
                             padding: "4px 7px",
                             borderRadius: 4,
-                            background: selectedCount === count ? "#fff" : "rgb(24, 24, 26)",
+                            background: selectedCount === count ? "#fff" : "var(--element-bg)",
                             fontSize: 13,
                             fontWeight: 300,
                             color: selectedCount === count ? "#000" : "#fff"
@@ -588,7 +615,7 @@ function Post({ postData, type, parent, basePathUrl }) {
                             justifyContent: "center",
                             padding: "4px 7px",
                             borderRadius: 4,
-                            background: selectedSize === size ? "#fff" : "rgb(24, 24, 26)",
+                            background: selectedSize === size ? "#fff" : "var(--element-bg)",
                             fontSize: 13,
                             fontWeight: 300,
                             color: selectedSize === size ? "#000" : "#fff"
@@ -622,7 +649,7 @@ function Post({ postData, type, parent, basePathUrl }) {
                             justifyContent: "center",
                             padding: "4px 7px",
                             borderRadius: 4,
-                            background: selectedPackage === pckg ? "#fff" : "rgb(24, 24, 26)",
+                            background: selectedPackage === pckg ? "#fff" : "var(--element-bg)",
                             fontSize: 13,
                             fontWeight: 300,
                             color: selectedPackage === pckg ? "#000" : "#fff"
@@ -736,13 +763,7 @@ function Post({ postData, type, parent, basePathUrl }) {
                           <img src={require("../screens/images/add-to-cart.svg").default} alt="" style={{width: "100%", height: "100%", objectFit: "cover"}} />
                         </div>
                       </div>
-                        <Button text={"Просмотреть корзину (" + cartItems.map(item => item.count).reduce((total, count) => total + count, 0) + ")"}  handleClick={(e) => {
-    window.history.replaceState({}, '', `/${businessId}${basePathUrl}?card_id=${data._id}`);
-    setPosts([]);
-    document.querySelector("html").style.overflow = "auto";
-                        document.querySelector("body").style.overflow = "auto";
-                        document.querySelector("body").style.position = "relative";
-                        document.querySelector("body").style.top = "0px";
+                                                <Button text={"Просмотреть корзину (" + cartItems.map(item => item.count).reduce((total, count) => total + count, 0) + ")"}  handleClick={(e) => {
                         setIsOpenPost(false);
                         navigate(`/${businessId}/cart`);
                       }} style={{

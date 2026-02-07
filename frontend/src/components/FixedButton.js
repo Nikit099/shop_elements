@@ -29,7 +29,7 @@ const FixedButton = (props) => {
   const [ isProButtonVisible, setIsProButtonVisible ] = useState(true);
   const [ canGoBack, setCanGoBack ] = useState(false);
   const [ canScrollUp, setCanScrollUp ] = useState(false);
-  const { accessToken, refreshToken, account, handleClickBackButton, cartItems, businessId } = useMainContext();
+  const { accessToken, refreshToken, handleClickBackButton, cartItems, businessId, isBusinessOwner } = useMainContext();
 
   const scrollUp = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -47,10 +47,8 @@ const FixedButton = (props) => {
   };
 
   const openButtons = () => {
-    setIsProButtonVisible(isProButtonVisible);
+    setIsProButtonVisible(prev => !prev);
   }
-
-  const handleDoubleClick = useDoubleClick(() => navigate(`/${businessId}`), openButtons);
 
   useEffect(() => {
     const updateCanGoBack = () => {
@@ -77,12 +75,22 @@ const FixedButton = (props) => {
   }, [location.pathname])
 
   return (
-    <div className={props.upper && 'upper' || props.send && 'send'}>
-      {/* {(account.user?.username === "thecreatxr" || account.user?.username === "Mr_Romadanov") &&
-      } */}
-      <div className={`fixed-button add ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate(`/${businessId}/add`)}>
-        <img src={require("./images/plus.svg").default} className="" alt="plus" />
-      </div>
+    <div className={(props.upper && 'upper') || (props.send && 'send')}>
+      {/* Кнопка настроек компании (только для владельца) */}
+      {isBusinessOwner && (
+        <div className={`fixed-button settings ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate(`/${businessId}/settings`)}>
+          <img src={require("./images/settings.svg").default} className="" alt="settings" />
+        </div>
+      )}
+      
+      {/* Кнопка добавления товара (только для владельца) */}
+      {isBusinessOwner && (
+        <div className={`fixed-button add ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate(`/${businessId}/add`)}>
+          <img src={require("./images/plus.svg").default} className="" alt="plus" />
+        </div>
+      )}
+      
+      {/* Кнопка корзины */}
       <div className={`fixed-button ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate(`/${businessId}/cart`)}>
         <img src={require("../screens/images/box.svg").default} className="" alt="cart" />
         {cartItems.length > 0 &&
@@ -99,16 +107,14 @@ const FixedButton = (props) => {
                      fontSize: 11,
                      fontWeight: 300}}>{cartItems.length}</div>}
       </div>
+      
+      {/* Кнопка назад */}
       {canGoBack &&
         <div className="fixed-button-back" onClick={handleClickBackButton ? handleClickBackButton : goBack}>
           <img src={require("./images/arrow-right.svg").default} className="" alt="arrow" />
         </div>}
-      {/* {(canScrollUp || props.send) &&
-      <div className={`fixed-button-up ${isProButtonVisible ? 'visible' : ''} ${(account.user?.username !== "thecreatxr" || account.user?.username !== "Mr_Romadanov") ? 'dif' : ''}`} onClick={!props.send ? scrollUp : props.onDelete}>
-        {!props.send ?
-          <img src={require("./images/arrow-right.svg").default} alt="arrow" />
-          : <img src={require("./images/close.svg").default} alt="arrow" style={{width: "100%"}}/> }
-      </div>} */}
+      
+      {/* Кнопка прокрутки вверх */}
       {(canScrollUp || props.send) &&
   <div className={`fixed-button-up ${isProButtonVisible ? 'visible' : ''}`} onClick={!props.send ? scrollUp : props.onDelete}>
     {!props.send ?

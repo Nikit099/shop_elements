@@ -9,11 +9,11 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <SocketProvider>
     <Router>
+    <SocketProvider>
       <LocalizationProvider dateAdapter={AdapterMoment} adapterLocale="de">
         <Navigate />
       </LocalizationProvider>
-    </Router>
   </SocketProvider>
+  </Router>
 );

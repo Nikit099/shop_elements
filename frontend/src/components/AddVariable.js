@@ -135,9 +135,9 @@ function AddVariable({ data, type }) {
             overflowY: "auto",
             overflowX: "hidden",
           }}>
-            <animated.div style={{background: "linear-gradient(to top, rgba(0, 0, 0, 1) 50%, rgba(26, 24, 24, 1) 100%)", 
-                                  width: "100vw",
-                                  minHeight: "100vh",
+                <animated.div style={{background: "linear-gradient(to top, rgba(0, 0, 0, 1) 50%, rgba(26, 24, 24, 1) 100%)", 
+                          width: "100vw",
+                          minHeight: "100vh",
                                   paddingBottom: 300,
                                   borderTopLeftRadius: 25, 
                                   borderTopRightRadius: 25, 

@@ -118,7 +118,233 @@ def check_business_owner(business_id: str, user_id: int) -> dict:
     except Exception as e:
         print(f"Error checking business owner: {e}")
         return None
+# Функции для работы с настройками бизнеса
+def get_business_settings(business_id):
+    """Получает настройки бизнеса из базы данных"""
+    try:
+        response = supabase.table('business_settings') \
+            .select('*') \
+            .eq('business_id', business_id) \
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            settings = response.data[0]
+            # Преобразуем JSON строку обратно в объект
+            if 'faq' in settings and isinstance(settings['faq'], str):
+                try:
+                    settings['faq'] = json.loads(settings['faq'])
+                except:
+                    settings['faq'] = []
+            return settings
+        else:
+            # Возвращаем настройки по умолчанию
+            return {
+                'business_id': business_id,
+                'business_name': 'LB',
+                'logo_url': '',
+                'tagline': '',
+                'advantages': '',
+                'phone_number': '',
+                'telegram_url': '',
+                'whatsapp_url': '',
+                'address': '',
+                'yandex_map_url': '',
+                'yandex_reviews_url': '',
+                'call_to_action': '',
+                'faq': []
+            }
+    except Exception as e:
+        print(f"Error getting business settings: {e}")
+        return None
 
+def update_business_settings(settings_data):
+    """Обновляет настройки бизнеса"""
+    try:
+        business_id = settings_data.get('business_id')
+        if not business_id:
+            return False
+        
+        # Проверяем, существует ли запись
+        existing = supabase.table('business_settings') \
+            .select('id') \
+            .eq('business_id', business_id) \
+            .execute()
+        
+        # Подготавливаем данные для обновления
+        update_data = {
+            'business_name': settings_data.get('business_name', 'LB'),
+            'logo_url': settings_data.get('logo_url', ''),
+            'tagline': settings_data.get('tagline', ''),
+            'advantages': settings_data.get('advantages', ''),
+            'phone_number': settings_data.get('phone_number', ''),
+            'telegram_url': settings_data.get('telegram_url', ''),
+            'whatsapp_url': settings_data.get('whatsapp_url', ''),
+            'address': settings_data.get('address', ''),
+            'yandex_map_url': settings_data.get('yandex_map_url', ''),
+            'yandex_reviews_url': settings_data.get('yandex_reviews_url', ''),
+            'call_to_action': settings_data.get('call_to_action', ''),
+            'faq': json.dumps(settings_data.get('faq', [])),
+            'updated_at': datetime.utcnow().isoformat()
+        }
+        
+        if existing.data and len(existing.data) > 0:
+            # Обновляем существующую запись
+            supabase.table('business_settings') \
+                .update(update_data) \
+                .eq('business_id', business_id) \
+                .execute()
+        else:
+            # Создаем новую запись
+            update_data['business_id'] = business_id
+            update_data['created_at'] = datetime.utcnow().isoformat()
+            supabase.table('business_settings') \
+                .insert(update_data) \
+                .execute()
+        
+        return True
+    except Exception as e:
+        print(f"Error updating business settings: {e}")
+        return False
+def upload_business_logo(business_id, image_data):
+    """Загружает логотип бизнеса в Supabase Storage и удаляет старый"""
+    try:
+        print(f"DEBUG: Начало загрузки логотипа для бизнеса {business_id}")
+        
+        # Проверяем, не пустые ли данные
+        if not image_data or image_data.strip() == "":
+            print(f"ERROR: Пустые данные изображения")
+            return None
+            
+        # Проверяем, не пытаемся ли мы загрузить уже существующий URL
+        if image_data.startswith('http'):
+            print(f"WARNING: Получен URL вместо base64: {image_data}")
+            return image_data
+        
+        # Получаем текущий URL логотипа из базы данных
+        try:
+            settings_response = supabase.table('business_settings') \
+                .select('logo_url') \
+                .eq('business_id', business_id) \
+                .execute()
+            
+            old_logo_url = None
+            if settings_response.data and len(settings_response.data) > 0:
+                old_logo_url = settings_response.data[0].get('logo_url')
+                print(f"DEBUG: Старый URL логотипа: {old_logo_url}")
+        except Exception as e:
+            print(f"WARNING: Не удалось получить старый URL логотипа: {e}")
+            old_logo_url = None
+        
+        # Удаляем старый логотип из бакета, если он существует
+        if old_logo_url and 'storage/v1/object/public/' in old_logo_url:
+            try:
+                # Извлекаем путь из URL
+                # Пример URL: https://xyz.supabase.co/storage/v1/object/public/public_assets/businesses/123/about/logo_abc.webp
+                path_parts = old_logo_url.split('storage/v1/object/public/public_assets/')
+                if len(path_parts) > 1:
+                    old_file_path = path_parts[1]
+                    print(f"DEBUG: Удаляем старый файл: {old_file_path}")
+                    
+                    # Удаляем файл из бакета
+                    delete_response = supabase.storage.from_(BUCKET_NAME).remove([old_file_path])
+                    print(f"DEBUG: Старый файл удален: {delete_response}")
+            except Exception as delete_error:
+                print(f"WARNING: Не удалось удалить старый файл: {delete_error}")
+                # Продолжаем загрузку нового файла даже если не удалось удалить старый
+        
+        # Декодируем base64
+        if "," in image_data:
+            image_data_binary = base64.b64decode(image_data.split(',')[-1])
+        else:
+            image_data_binary = base64.b64decode(image_data)
+        
+        # Сжимаем изображение
+        image = Image.open(BytesIO(image_data_binary))
+        
+        # Сохраняем прозрачность для PNG
+        if image.mode in ("RGBA", "LA") or (image.mode == "P" and 'transparency' in image.info):
+            # Сохраняем альфа-канал для PNG с прозрачностью
+            image = image.convert("RGBA")
+            # WebP поддерживает прозрачность
+        else:
+            # Для изображений без прозрачности конвертируем в RGB
+            if image.mode in ("P", "L"):
+                image = image.convert("RGB")
+        
+        # Оптимальный размер для логотипа - увеличиваем качество
+        image.thumbnail((400, 400), Image.LANCZOS)
+        
+        # Конвертируем в WebP с лучшим качеством для логотипов
+        img_byte_arr = BytesIO()
+        image.save(img_byte_arr, format='WEBP', quality=95, method=6)
+        compressed_image = img_byte_arr.getvalue()
+        
+        # Генерируем имя файла
+        filename = f"logo_{uuid.uuid4()}.webp"
+        # Используем путь businesses/{business_id}/about/
+        path = f"businesses/{business_id}/about/{filename}"
+        print(f"DEBUG: Путь для загрузки: {path}")
+        
+        # Загружаем в Supabase Storage
+        try:
+            response = supabase.storage.from_(BUCKET_NAME).upload(
+                path,
+                compressed_image,
+                {"content-type": "image/webp", "upsert": 'true'}
+            )
+            print(f"DEBUG: Файл загружен в Supabase")
+        except Exception as upload_error:
+            print(f"ERROR: Ошибка при загрузке в Supabase: {upload_error}")
+            return None
+        
+        # Получаем публичный URL
+        try:
+            public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(path)
+            print(f"DEBUG: Публичный URL: {public_url}")
+            
+            # Обновляем URL логотипа в базе данных
+            try:
+                update_data = {
+                    'logo_url': public_url,
+                    'updated_at': datetime.utcnow().isoformat()
+                }
+                
+                # Проверяем, существует ли запись
+                existing = supabase.table('business_settings') \
+                    .select('id') \
+                    .eq('business_id', business_id) \
+                    .execute()
+                
+                if existing.data and len(existing.data) > 0:
+                    # Обновляем существующую запись
+                    supabase.table('business_settings') \
+                        .update(update_data) \
+                        .eq('business_id', business_id) \
+                        .execute()
+                else:
+                    # Создаем новую запись
+                    update_data['business_id'] = business_id
+                    update_data['created_at'] = datetime.utcnow().isoformat()
+                    update_data['business_name'] = 'LB'  # Значение по умолчанию
+                    supabase.table('business_settings') \
+                        .insert(update_data) \
+                        .execute()
+                
+                print(f"DEBUG: URL логотипа обновлен в базе данных")
+            except Exception as db_error:
+                print(f"WARNING: Не удалось обновить URL в базе данных: {db_error}")
+                # Возвращаем URL даже если не удалось обновить БД
+            
+            return public_url
+        except Exception as url_error:
+            print(f"ERROR: Ошибка при получении URL: {url_error}")
+            return None
+            
+    except Exception as e:
+        print(f"ERROR: Общая ошибка в upload_business_logo: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 def create_shop_owner(telegram_id: int, shop_id: str):
     """Назначает пользователя владельцем магазина"""
     try:
@@ -152,8 +378,15 @@ def compress_image_to_bytes(image_data, max_size, quality):
     """Конвертирует любое изображение в WebP и сжимает"""
     image = Image.open(BytesIO(image_data))
     
-    if image.mode in ("RGBA", "P"):
-        image = image.convert("RGB")
+    # Сохраняем прозрачность для PNG
+    if image.mode in ("RGBA", "LA") or (image.mode == "P" and 'transparency' in image.info):
+        # Сохраняем альфа-канал для PNG с прозрачностью
+        image = image.convert("RGBA")
+        # WebP поддерживает прозрачность
+    else:
+        # Для изображений без прозрачности конвертируем в RGB
+        if image.mode in ("P", "L"):
+            image = image.convert("RGB")
     
     image.thumbnail(max_size, Image.LANCZOS)
     img_byte_arr = BytesIO()
@@ -514,7 +747,35 @@ def handle_message(message):
                 response = supabase.table('orders').insert(data).execute()
                 order_id = response.data[0]['id'] if response.data else None
                 emit("message", json.dumps(["order", "new", str(order_id)]))
+        elif message[0] == "business_settings":
+            if message[1] == "get":
+                business_id = message[2].get('business_id')
+                settings = get_business_settings(business_id)
+                emit('message', json.dumps(['business_settings', 'get', settings]))
                 
+            elif message[1] == "update":
+                settings_data = message[2]
+                success = update_business_settings(settings_data)
+                if success:
+                    emit('message', json.dumps(['business_settings', 'update', 'success']))
+                else:
+                    emit('message', json.dumps(['error', 'business_settings_update_failed']))
+                    
+            elif message[1] == "upload_logo":
+                business_id = message[2].get('business_id')
+                image_data = message[2].get('image_data')
+                
+                # Проверяем, не является ли это уже URL (защита от цикла)
+                if isinstance(image_data, str) and image_data.startswith('http'):
+                    print(f"WARNING: Получен URL вместо изображения, пропускаем загрузку: {image_data}")
+                    emit('message', json.dumps(['business_settings', 'upload_logo', image_data]))
+                    return
+                
+                logo_url = upload_business_logo(business_id, image_data)
+                if logo_url:
+                    emit('message', json.dumps(['business_settings', 'upload_logo', logo_url]))
+                else:
+                    emit('message', json.dumps(['error', 'logo_upload_failed']))       
     except Exception as e:
         print(f"Error: {e}")
         emit('message', json.dumps(['error', str(e)]))

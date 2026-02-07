@@ -6,7 +6,7 @@
   overflow: hidden;
 
   display: flex;
-  background-color: #18181A;
+  background-color: var(--input-bg);
 }
 
 .input:first-child {
@@ -23,17 +23,17 @@
   display: block;
   width: calc(100% - 20px);
   padding: 0;
-  background-color: #18181A;
+  background-color: var(--input-bg);
   border: 0;
   border-radius: 0;
   padding: 17px 10px 10px 10px;
   font-family: 'Roboto', sans-serif;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 300;
   outline: none;
   margin: 0;
-  border-bottom: .5px solid #292929;
+  border-bottom: .5px solid var(--input-border);
 }
 
 .input:first-child input[type="text"], .input:first-child input[type="number"] {
@@ -70,7 +70,7 @@
   font-family: 'Roboto', sans-serif;
   font-weight: 300;
   transition: .2s;
-  color: #aaa;
+  color: var(--text-tertiary);
 
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -82,7 +82,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #18181A;
+  background-color: var(--input-bg);
   width: calc(100% - 20px);
   padding: 10px 10px 10px 10px;
 }
@@ -98,31 +98,37 @@
 .input.radio label, .input.select label {
   position: relative;
   top: 0;
-  color: #aaa;
+  color: var(--text-tertiary);
   left: 0;
 }
+
 .input select {
   width: 0;
   height: 0;
   opacity: 0;
 }
+
 .input.radio, .input.select {
-  border-bottom: .5px solid #292929;
+  border-bottom: .5px solid var(--input-border);
 }
+
 .input.radio:first-child, .input.select:first-child{
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
 }
+
 .input.radio:last-child, .input.select:last-child{
   border-bottom-left-radius: 4px;
   border-bottom-right-radius: 4px;
   border-bottom: 0;
 }
+
 .input.error {
   border-right: 1px solid red;
   border-left: 1px solid red;
   width: calc(100% - 22px);
 }
+
 .input.error:first-child {
   border-top: 1px solid red;
 }
@@ -139,7 +145,7 @@
   border: 0;
   border-radius: 0;
   font-family: 'Roboto', sans-serif;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 300;
   outline: none;
@@ -150,11 +156,13 @@
 
 .input.textarea {
   padding: 17px 10px 10px 10px;
-  background-color: #18181A;
+  background-color: var(--input-bg);
 }
+
 .input.textarea {
-  border-bottom: .5px solid #292929;
+  border-bottom: .5px solid var(--input-border);
 }
+
 .input.textarea:first-child{
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
@@ -180,7 +188,7 @@
   font-size: 13px;
   font-weight: 300;
   margin-bottom: 5px;
-  color: #aaa;
+  color: var(--text-tertiary);
 }
 
 .value {
@@ -189,6 +197,7 @@
 
   font-size: 14px;
   font-weight: 300;
+  color: var(--text-primary);
 
   display: flex;
   gap: 8px;
@@ -204,7 +213,7 @@
 
   font-size: 14px;
   font-weight: 300;
-  color: #aaa;
+  color: var(--text-tertiary);
   
   display: flex;
   gap: 8px;
@@ -224,6 +233,7 @@
 
   font-size: 14px;
   font-weight: 300;
+  color: var(--text-primary);
 
   display: flex;
   gap: 8px;
@@ -232,4 +242,3 @@
 .selectChoice img {
   transform: rotate(90deg);
 }
-

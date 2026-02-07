@@ -95,6 +95,12 @@
   transition: transform 0.2s ease-in-out, opacity 0.3s ease-in-out;
 }
 
+.fixed-button.settings {
+  transform: translateY(0) scale(.1);
+  opacity: 0;
+  transition: transform 0.2s ease-in-out, opacity 0.3s ease-in-out;
+}
+
 .fixed-button.search {
   transform: translateY(0) scale(.1);
   opacity: 0;
@@ -131,7 +137,16 @@
   opacity: 1;
 }
 
+.fixed-button.settings.visible {
+  transform: translateY(-130px) scale(.9);
+  opacity: 1;
+}
+
 .fixed-button.add img {
+}
+
+.fixed-button.settings img {
+  width: 80%;
 }
 
 .fixed-button.search.visible {

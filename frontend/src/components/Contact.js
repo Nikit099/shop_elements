@@ -120,9 +120,9 @@ function Contact() {
             overflowY: "auto",
             overflowX: "hidden",
           }}>
-            <animated.div style={{background: "linear-gradient(to top, rgba(0, 0, 0, 1) 50%, rgba(26, 24, 24, 1) 100%)", 
-                                  width: "100vw",
-                                  minHeight: "150px",
+                <animated.div style={{background: "linear-gradient(to top, rgba(0, 0, 0, 1) 50%, rgba(26, 24, 24, 1) 100%)", 
+                          width: "100vw",
+                          minHeight: "150px",
                                   borderTopLeftRadius: 25, 
                                   borderTopRightRadius: 25, 
                                   position: "relative",

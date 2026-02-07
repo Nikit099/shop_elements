@@ -12,6 +12,7 @@ import Edit from './screens/Edit';
 import Cart from './screens/Cart';
 import Card from './screens/Card';
 import NotFound from './screens/NotFound';
+import BusinessSettings from './screens/BusinessSettings';
 
 const Navigate = () => {
   const { loading } = useMainContext();
@@ -41,6 +42,9 @@ const Navigate = () => {
           <Route path="/:bId/search" element={<Search />} />
           <Route path="/:bId/card/:id" element={<Card />} />
           <Route path="/:bId/edit/:id" element={<Edit />} />
+          
+          {/* Страница настроек бизнеса - только для владельца */}
+          <Route path="/:bId/settings" element={<BusinessSettings />} />
           
           {/* Страница 404 для всех остальных маршрутов */}
           <Route path="*" element={<NotFound />} />

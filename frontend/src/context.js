@@ -1,15 +1,25 @@
 // frontend/src/context.js - упрощенная версия с Telegram авторизацией
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import io from 'socket.io-client';
 
 const SocketContext = createContext();
 
 const SocketProvider = ({ children }) => {
-  const [theme, setTheme] = useState("Light");
+  const location = useLocation();
+  const [theme, setTheme] = useState(() => {
+    // Восстанавливаем тему из localStorage при инициализации
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme || "Light";
+  });
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [businessId, setBusinessId] = useState(null);
+  const [businessId, setBusinessId] = useState(() => {
+    // Восстанавливаем businessId из localStorage при инициализации
+    const savedBusinessId = localStorage.getItem('businessId');
+    return savedBusinessId || null;
+  });
   
   // Telegram user data
   const [telegramUser, setTelegramUser] = useState(() => {
@@ -23,13 +33,22 @@ const SocketProvider = ({ children }) => {
   
   // Проверка владельца магазина
   const [isBusinessOwner, setIsBusinessOwner] = useState(() => {
+    // Проверяем режим тестирования
+    const testMode = localStorage.getItem('test') === 'true';
+    if (testMode) {
+      console.log("Режим тестирования активирован - пользователь считается владельцем магазина");
+      return true;
+    }
+
     const savedOwnerInfo = localStorage.getItem('ownerInfo');
-    if (!savedOwnerInfo) return true;
+    const savedIsOwner = localStorage.getItem('isBusinessOwner');
+    
+    if (!savedOwnerInfo || savedIsOwner !== 'true') return false;
     
     try {
       const ownerInfo = JSON.parse(savedOwnerInfo);
-      const currentBusinessId = window.location.pathname.split('/')[1];
-      return ownerInfo.businessId === currentBusinessId;
+      const savedBusinessId = localStorage.getItem('businessId');
+      return ownerInfo.businessId === savedBusinessId;
     } catch (e) {
       return false;
     }
@@ -61,11 +80,26 @@ const SocketProvider = ({ children }) => {
 
   // Функция для проверки владельца магазина
   const checkBusinessOwner = async (businessId) => {
+    // Проверяем режим тестирования
+    const testMode = localStorage.getItem('test') === 'true';
+    if (testMode) {
+      console.log("Режим тестирования: пользователь считается владельцем магазина для бизнеса:", businessId);
+      const ownerInfo = {
+        businessId: businessId,
+        userId: telegramUser?.id || 999999999, // Тестовый ID
+        timestamp: Date.now()
+      };
+      localStorage.setItem('ownerInfo', JSON.stringify(ownerInfo));
+      localStorage.setItem('isBusinessOwner', 'true');
+      setIsBusinessOwner(true);
+      return true;
+    }
+
     if (!telegramUser || !telegramUser.id) {
       console.log("Пользователь не авторизован через Telegram");
-      setIsBusinessOwner(true);
-      localStorage.setItem('isBusinessOwner', 'ture');
-      return true;
+      setIsBusinessOwner(false);
+      localStorage.setItem('isBusinessOwner', 'false');
+      return false;
     }
 
     try {
@@ -87,23 +121,23 @@ const SocketProvider = ({ children }) => {
           
           setIsBusinessOwner(true);
           setShopInfo(businessInfo);
-          console.log("Пользователь является владельцем магазина");
+          console.log("Пользователь является владельцем магазина для бизнеса:", businessId);
           return true;
         } else {
           // Пользователь не владелец
-          localStorage.setItem('isBusinessOwner', 'true');
-          setIsBusinessOwner(true);
-          console.log("Пользователь не является владельцем магазина");
-          return true;
+          localStorage.setItem('isBusinessOwner', 'false');
+          setIsBusinessOwner(false);
+          console.log("Пользователь не является владельцем магазина для бизнеса:", businessId);
+          return false;
         }
       } else {
-        console.log("Ошибка при проверке владельца");
+        console.log("Ошибка при проверке владельца для бизнеса:", businessId);
         localStorage.setItem('isBusinessOwner', 'false');
         setIsBusinessOwner(false);
         return false;
       }
     } catch (err) {
-      console.error('Error checking business owner:', err);
+      console.error('Error checking business owner for business:', businessId, err);
       localStorage.setItem('isBusinessOwner', 'false');
       setIsBusinessOwner(false);
       return false;
@@ -111,10 +145,13 @@ const SocketProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Сохраняем тему в localStorage при изменении
+    localStorage.setItem('theme', theme);
+    
     if (theme === "Light") {
-      document.body.className = "dark";
-    } else {
       document.body.className = "light";
+    } else {
+      document.body.className = "dark";
     }
   }, [theme]);
 
@@ -133,25 +170,47 @@ const SocketProvider = ({ children }) => {
   }, [socket]);
 
   useEffect(() => {
-    const pathParts = window.location.pathname.split('/');
+    const pathParts = location.pathname.split('/');
     const bId = pathParts[1]; 
     
     if (bId && bId !== "card" && bId !== "cart" && bId !== "welcome" && bId !== "oups") {
-      setBusinessId(bId);
-      localStorage.setItem('businessId', bId);
+      // Всегда обновляем businessId из URL, если он валидный
+      const savedBusinessId = localStorage.getItem('businessId');
       
-      // Проверяем владельца магазина
-      if (telegramUser?.id) {
-        checkBusinessOwner(bId);
-      } else {
-        // Если нет Telegram пользователя, сбрасываем флаг владельца
-        setIsBusinessOwner(true);
-        localStorage.setItem('isBusinessOwner', 'ture');
+      if (savedBusinessId !== bId) {
+        setBusinessId(bId);
+        localStorage.setItem('businessId', bId);
+        
+        // Проверяем владельца магазина
+        if (telegramUser?.id) {
+          checkBusinessOwner(bId);
+        } else {
+          // Если нет Telegram пользователя, сбрасываем флаг владельца
+          setIsBusinessOwner(false);
+          localStorage.setItem('isBusinessOwner', 'false');
+        }
+        
+        console.log("Business ID установлен из URL:", bId);
+      } else if (savedBusinessId === bId) {
+        // Если businessId уже сохранен, просто проверяем владельца
+        if (telegramUser?.id) {
+          checkBusinessOwner(bId);
+        }
       }
-      
-      console.log("Business ID установлен:", bId, "Владелец:", isBusinessOwner);
+    } else if (!bId || bId === "welcome" || bId === "oups") {
+      // Очищаем businessId для специальных маршрутов
+      setBusinessId(null);
+      localStorage.removeItem('businessId');
+      setIsBusinessOwner(false);
+      localStorage.setItem('isBusinessOwner', 'false');
+      console.log("Business ID очищен для маршрута:", bId);
     }
-  }, [window.location.pathname, telegramUser]);
+  }, [location.pathname, telegramUser]);
+
+  // Эффект для логирования изменений isBusinessOwner
+  useEffect(() => {
+    console.log("Статус владельца магазина обновлен:", isBusinessOwner, "для бизнеса:", businessId);
+  }, [isBusinessOwner, businessId]);
 
   useEffect(() => {
     if (socket) {

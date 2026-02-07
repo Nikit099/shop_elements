@@ -32,6 +32,21 @@ function Card() {
     }
   }, [message, bId, navigate, setMessage]);
 
+  // Обработка кнопки "назад"
+  useEffect(() => {
+    const handleBackButton = () => {
+      // При нажатии назад из карточки возвращаемся на главную
+      navigate(`/${bId}`, { replace: true });
+    };
+
+    // Добавляем обработчик popstate
+    window.addEventListener('popstate', handleBackButton);
+    
+    return () => {
+      window.removeEventListener('popstate', handleBackButton);
+    };
+  }, [bId, navigate]);
+
   if (loading) {
     return <div>Загрузка...</div>;
   }
@@ -42,7 +57,11 @@ function Card() {
 
   return (
     <div>
-      <Post postData={cardData} type="modal" />
+      <Post 
+        postData={cardData} 
+        type="modal" 
+        shouldOpenModal={true}
+      />
     </div>
   );
 }

@@ -274,7 +274,7 @@
 .promoBody > div {
   display: flex;
   align-items: center;
-  justify-content: start;
+  justify-content: flex-start;
 
   gap: 10px;
 
@@ -311,7 +311,7 @@
 .footer {
   min-height: 50vh;
   padding-top: 5px;
-  border-top: .5px solid #18181A;
+  /* border-top: .5px solid #18181A; */
   margin-left: -15px;
   width: calc(100%);
   padding: 0 15px;

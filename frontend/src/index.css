@@ -3,6 +3,29 @@
 :root {
   --main-bg-color: #000000;
   --main-font-color: #FFFFFF;
+  --button-bg-dark: linear-gradient(180deg, rgba(102, 102, 102, 0.35) 0%, rgba(51, 51, 51, 0.50) 100%);
+  --button-bg-light: linear-gradient(180deg, rgba(230, 230, 230, 0.35) 0%, rgba(200, 200, 200, 0.50) 100%);
+  --input-bg-dark: #18181A;
+  --input-bg-light: #F2F2F7;
+  --input-border-dark: #292929;
+  --input-border-light: #C7C7CC;
+  --text-primary-dark: #FFFFFF;
+  --text-primary-light: #000000;
+  --text-secondary-dark: #8F8E93;
+  --text-secondary-light: #8E8E93;
+  --surface-dark: #1C1C1E;
+  --surface-light: #F2F2F7;
+  --card-bg-dark: #323234;
+  --card-bg-light: #E5E5EA;
+  --text-tertiary-dark: #bbb;
+  --text-tertiary-light: #666;
+  --modal-bg-dark: linear-gradient(to top, rgba(0, 0, 0, 1) 50%, rgba(26, 24, 24, 1) 100%);
+  --modal-bg-light: linear-gradient(to top, rgba(255, 255, 255, 1) 50%, rgba(245, 245, 247, 1) 100%);
+  --element-bg-dark: rgb(24, 24, 26);
+  --element-bg-light: rgb(230, 230, 235);
+  --gradient-red: linear-gradient(125deg, rgb(239 7 50) 0%, rgb(253 68 59) 100%);
+  --element-bg-dark-rgb: 24, 24, 26;
+  --element-bg-light-rgb: 230, 230, 235;
 }
 
 body {
@@ -21,6 +44,36 @@ body {
 body.light {
   background-color: #fff;
   color: var(--main-bg-color);
+}
+
+body.light {
+  --main-bg-color: #FFFFFF;
+  --main-font-color: #000000;
+  --button-bg: var(--button-bg-light);
+  --input-bg: var(--input-bg-light);
+  --input-border: var(--input-border-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --surface: var(--surface-light);
+  --card-bg: var(--card-bg-light);
+  --text-tertiary: var(--text-tertiary-light);
+  --modal-bg: var(--modal-bg-light);
+  --element-bg: var(--element-bg-light);
+  --element-bg-rgb: var(--element-bg-light-rgb);
+}
+
+body:not(.light) {
+  --button-bg: var(--button-bg-dark);
+  --input-bg: var(--input-bg-dark);
+  --input-border: var(--input-border-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --surface: var(--surface-dark);
+  --card-bg: var(--card-bg-dark);
+  --text-tertiary: var(--text-tertiary-dark);
+  --modal-bg: var(--modal-bg-dark);
+  --element-bg: var(--element-bg-dark);
+  --element-bg-rgb: var(--element-bg-dark-rgb);
 }
 
 body, html {

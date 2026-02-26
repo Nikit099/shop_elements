@@ -812,10 +812,6 @@ def increment_views(card_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 if __name__ == '__main__':
-    socketio.run(
-        app,
-        host='127.0.0.1',
-        port=8080,
-        debug=True
-    )
+    socketio.run(app, debug=True, port=8080)

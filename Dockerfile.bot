@@ -2,18 +2,17 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Установка системных зависимостей
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Обновляем pip
+RUN pip install --upgrade pip
 
-# Копирование зависимостей
+# Зависимости → кэш слоёв
 COPY bot/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование исходного кода
+# Код проекта
 COPY bot/ .
 
-# Запуск бота
+# Бот обычно не слушает HTTP-порты (polling), но на всякий
+EXPOSE 8080
+
 CMD ["python", "bot.py"]

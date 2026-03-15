@@ -103,7 +103,7 @@ const SocketProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/business/check-owner/${businessId}?user_id=${telegramUser.id}`);
+      const response = await fetch(`/api/business/check-owner/${businessId}?user_id=${telegramUser.id}`);
       
       if (response.ok) {
         const businessInfo = await response.json();
@@ -157,7 +157,7 @@ const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (!socket) {
-      const newSocket = io("http://localhost:8080", {
+      const newSocket = io("", {
         transportOptions: {
           polling: {
             maxHttpBufferSize: 1e8,
@@ -169,34 +169,34 @@ const SocketProvider = ({ children }) => {
     }
   }, [socket]);
 
-  useEffect(() => {
-    const pathParts = location.pathname.split('/');
-    const bId = pathParts[1]; 
-    
-    if (bId && bId !== "card" && bId !== "cart" && bId !== "welcome" && bId !== "oups") {
-      // Немедленно обновляем businessId из URL
-      setBusinessId(bId);
-      localStorage.setItem('businessId', bId);
+    useEffect(() => {
+      const pathParts = location.pathname.split('/');
+      const bId = pathParts[1]; 
       
-      // Проверяем владельца магазина
-      if (telegramUser?.id) {
-        checkBusinessOwner(bId);
-      } else {
-        // Если нет Telegram пользователя, сбрасываем флаг владельца
+      if (bId && bId !== "card" && bId !== "cart" && bId !== "welcome" && bId !== "oups") {
+        // Немедленно обновляем businessId из URL
+        setBusinessId(bId);
+        localStorage.setItem('businessId', bId);
+        
+        // Проверяем владельца магазина
+        if (telegramUser?.id) {
+          checkBusinessOwner(bId);
+        } else {
+          // Если нет Telegram пользователя, сбрасываем флаг владельца
+          setIsBusinessOwner(false);
+          localStorage.setItem('isBusinessOwner', 'false');
+        }
+        
+        console.log("Business ID установлен из URL:", bId);
+      } else if (!bId || bId === "welcome" || bId === "oups") {
+        // Очищаем businessId для специальных маршрутов
+        setBusinessId(null);
+        localStorage.removeItem('businessId');
         setIsBusinessOwner(false);
         localStorage.setItem('isBusinessOwner', 'false');
+        console.log("Business ID очищен для маршрута:", bId);
       }
-      
-      console.log("Business ID установлен из URL:", bId);
-    } else if (!bId || bId === "welcome" || bId === "oups") {
-      // Очищаем businessId для специальных маршрутов
-      setBusinessId(null);
-      localStorage.removeItem('businessId');
-      setIsBusinessOwner(false);
-      localStorage.setItem('isBusinessOwner', 'false');
-      console.log("Business ID очищен для маршрута:", bId);
-    }
-  }, [location.pathname, telegramUser]);
+    }, [location.pathname, telegramUser]);
 
   // Эффект для логирования изменений isBusinessOwner
   useEffect(() => {
@@ -210,6 +210,9 @@ const SocketProvider = ({ children }) => {
         setLoading(false);
       });
       
+      // Fallback: если сокет не подключился за 5 секунд — всё равно показываем приложение
+      const timeout = setTimeout(() => setLoading(false), 5000);
+      
       socket.on('disconnect', () => {
         console.log('Отключились от сервера');
       });
@@ -219,6 +222,7 @@ const SocketProvider = ({ children }) => {
       });
       
       return () => {
+        clearTimeout(timeout);
         socket.off('connect');
         socket.off('disconnect');
         socket.off('message');

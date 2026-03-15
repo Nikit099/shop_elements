@@ -333,8 +333,8 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
               </animated.div>
             </div> */}
             <div style={{height: "100%", display: "flex", flexFlow: "column", rowGap: 5, padding: "0 5px 5px 5px"}}>
-              <div style={{fontSize: 14, fontWeight: 400}}>{data.title}</div>
-              <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93"}}>{data.price}</div> 
+              <div style={{fontSize: 14, fontWeight: 400, color: theme === "Dark" ? "#dfdfdfff" : "#2d2d2dff"}}>{data.title}</div>
+              <div style={{fontSize: 14, fontWeight: 300, color: theme === "Dark" ? "#8F8E93" : "#666666"}}>{data.price}</div> 
               {/* <span style={{display: "inline-block", textDecoration: "line-through", transform: "scale(.8)"}}>{data.oldPrice}</span> */}
             </div>
           </div>
@@ -357,8 +357,8 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
               </animated.div>
             </div>
             <div style={{height: "100%", display: "flex", flexFlow: "column", rowGap: 5, padding: "0 5px 5px 5px"}}>
-              <div style={{fontSize: 14, fontWeight: 400}}>{data.title}</div>
-              <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93"}}>{data.price}</div>
+              <div style={{fontSize: 14, fontWeight: 400, color: theme === "Dark" ? "#dfdfdfff" : "#2d2d2dff"}}>{data.title}</div>
+              <div style={{fontSize: 14, fontWeight: 300, color: theme === "Dark" ? "#8F8E93" : "#666666"}}>{data.price}</div>
             </div>
           </div>
         </animated.div>}
@@ -371,8 +371,8 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
               </div>
             </div>
             <div style={{display: "flex", flexFlow: "column", rowGap: 5}}>
-              <div style={{fontSize: 14, fontWeight: 400}}>{data.title}</div>
-              <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93"}}>{data.price}</div>
+              <div style={{fontSize: 14, fontWeight: 400, color: theme === "Dark" ? "#dfdfdfff" : "#2d2d2dff"}}>{data.title}</div>
+              <div style={{fontSize: 14, fontWeight: 300, color: theme === "Dark" ? "#8F8E93" : "#666666"}}>{data.price}</div>
             </div>
             {/* <div style={{marginLeft: "auto", height: 28, width: 86, position: "relative", flexShrink: 0}}>
               <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: 28, flexShrink: 0, width: "100%"}}>
@@ -397,7 +397,7 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
                 <LazyLoadImage src={data.images[0]?.file} placeholderSrc={data.images[0]?.file_lazy} style={{width: "100%", height: "100%", objectFit: "cover"}} />
               </div>
               <div style={{width: "calc(100% - 20px)", display: "flex", flexFlow: "column", rowGap: 5, padding: "60px 10px 10px 10px", position: "absolute", bottom: 0, left: 0, background: "linear-gradient(to top, rgba(24, 24, 26, .9) 10%, rgba(24, 24, 26, 0) 100%)"}}>
-                <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: theme === "Dark" ? "#fff" : "#fff"}}>{data.title}</div>
+                <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#fff"}}>{data.title}</div>
                 <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93", marginTop: "auto"}}>{data.price}</div>
               </div>
             </div>
@@ -410,8 +410,8 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
               <LazyLoadImage src={data.images[0]?.file} placeholderSrc={data.images[0]?.file_lazy} style={{width: "100%", height: "100%", objectFit: "cover"}} />
             </div>
             <div style={{width: "calc(100% - 20px)", display: "flex", flexFlow: "column", rowGap: 5, padding: "60px 10px 10px 10px", position: "absolute", bottom: 0, left: 0, background: "linear-gradient(to top, rgba(24, 24, 26, .9) 10%, rgba(24, 24, 26, 0) 100%)"}}>
-                              <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: theme === "Dark" ? "#fff" : "#fff"}}>{data.title}</div>
-              <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93", marginTop: "auto"}}>{data.price}</div>
+                              <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#fff"}}>{data.title}</div>
+                <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93", marginTop: "auto"}}>{data.price}</div>
             </div>
           </div>
         </animated.div>}
@@ -422,8 +422,8 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
               <LazyLoadImage src={data.images[0]?.file} placeholderSrc={data.images[0]?.file_lazy} style={{width: "100%", height: "100%", objectFit: "cover"}} />
             </div>
             <div style={{width: "calc(100% - 20px)", display: "flex", flexFlow: "column", rowGap: 5, padding: "60px 10px 10px 10px", position: "absolute", bottom: 0, left: 0, background: "linear-gradient(to top, rgba(24, 24, 26, .9) 10%, rgba(24, 24, 26, 0) 100%)"}}>
-                              <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: theme === "Dark" ? "#fff" : "#fff"}}>{data.title}</div>
-              <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93", marginTop: "auto"}}>{data.price}</div>
+                              <div style={{fontSize: 14, fontWeight: 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#fff"}}>{data.title}</div>
+                <div style={{fontSize: 14, fontWeight: 300, color: "#8F8E93", marginTop: "auto"}}>{data.price}</div>
             </div>
           </div>
         </animated.div>}
@@ -487,6 +487,12 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
                     } else {
                       // Если Web Share API не поддерживается, вы можете предложить пользователю скопировать ссылку в буфер обмена или использовать другие методы общения.
                       console.log('Web Share API не поддерживается в вашем браузере');
+
+<div style={{height: "100%", display: "flex", flexFlow: "column", rowGap: 5, padding: "0 5px 5px 5px"}}>
+  <div style={{fontSize: 14, fontWeight: 400, color: theme === "Dark" ? "#dfdfdfff" : "#2d2d2dff"}}>{data.title}</div>
+  <div style={{fontSize: 14, fontWeight: 300, color: theme === "Dark" ? "#8F8E93" : "#666666"}}>{data.price}</div>
+  {/* <span style={{display: "inline-block", textDecoration: "line-through", transform: "scale(.8)"}}>{data.oldPrice}</span> */}
+</div>
                     }
                   }}>
                     <img src={require("../components/images/share-white.svg").default} alt="" style={{marginBottom: 0, height: 40}} />

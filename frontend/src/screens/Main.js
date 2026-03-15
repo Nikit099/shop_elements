@@ -70,14 +70,17 @@ function Main() {
 
   useEffect(() => {
     if (!businessId) {   
-          setPosts([]);
-          return; 
-         }
-    window.scrollTo({top: 0, smooth: "behavior"});
-    const filters = {"category": "Розы с любовью" }
-    if (businessId){
-      filters["business_id"] = businessId
+      setPosts([]);
+      return; 
     }
+    
+    console.log("Загрузка данных для businessId:", businessId);
+    window.scrollTo({top: 0, smooth: "behavior"});
+    
+    // Сбрасываем посты при смене businessId
+    setPosts([]);
+    
+    const filters = {"category": "Розы с любовью", "business_id": businessId};
     sendMessage(JSON.stringify(["cards", "filter", filters, 6]));
   }, [businessId])
 
@@ -98,6 +101,7 @@ function Main() {
   }, [message]);
     // Загрузка настроек бизнеса
   const [businessSettings, setBusinessSettings] = useState(null);
+  
   
   useEffect(() => {
     if (businessId) {

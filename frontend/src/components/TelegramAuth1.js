@@ -46,7 +46,7 @@ const handleTelegramAuth = async () => {
     
     if (businessId && businessId !== 'auth' && businessId !== 'welcome') {
       // Проверяем, является ли пользователь владельцем бизнеса
-      const response = await fetch(`/api/business/check-owner/${businessId}?user_id=${user_id}`);
+      const response = await fetch(`http://localhost:8080/api/business/check-owner/${businessId}?user_id=${user_id}`);
       
       if (response.ok) {
         const businessInfo = await response.json();
@@ -92,7 +92,7 @@ const handleTelegramAuth = async () => {
     }
 
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('http://localhost:8080/api/auth/me', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -131,7 +131,7 @@ const handleTelegramAuth = async () => {
     }
 
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('http://localhost:8080/api/auth/me', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,

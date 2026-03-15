@@ -1,0 +1,18 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Обновляем pip
+RUN pip install --upgrade pip
+
+# Зависимости → кэш слоёв
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Код проекта
+COPY . .
+
+# Бот обычно не слушает HTTP-порты (polling), но на всякий
+EXPOSE 8080
+
+CMD ["python", "bot.py"]

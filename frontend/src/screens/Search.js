@@ -28,8 +28,8 @@ function Search() {
     if (cardId && businessId && !hasProcessedCardIdRef.current) {
       hasProcessedCardIdRef.current = true;
       
-      // Если есть card_id в URL, загружаем карточку
-      sendMessage(JSON.stringify(["cards", "filter", {"_id": cardId}, 1]));
+      // Если есть card_id в URL, загружаем карточку с фильтрацией по business_id
+      sendMessage(JSON.stringify(["cards", "filter", {"_id": cardId, "business_id": businessId}, 1]));
       
       // Очищаем URL от параметра card_id после короткой задержки
       const timer = setTimeout(() => {
@@ -69,6 +69,17 @@ function Search() {
     }
   }, [message]);
   
+  // Загрузка карточек при монтировании компонента
+  useEffect(() => {
+    if (businessId) {
+      console.log("Загрузка карточек для бизнеса:", businessId);
+      setPosts([]); // Сбрасываем посты при смене бизнеса
+      
+      // Загружаем карточки с фильтрацией по business_id
+      sendMessage(JSON.stringify(["cards", "filter", {"business_id": businessId}, 25]));
+    }
+  }, [businessId]);
+  
   const [ isOpenFilter, setIsOpenFilter ] = useState(false);
   
   const openFilter = () => {
@@ -96,11 +107,6 @@ function Search() {
   const [ selectedSizes, setSelectedSizes ] = useState([]);
   const [ selectedPackages, setSelectedPackages ] = useState([]);
   const [ price, setPrice ] = useState([]);
-  const categories = [
-    "Розы с любовью",
-    "Подарки"
-  ]
-  const [ selectedCategory, setSelectedCategory ] = useState("Розы с любовью");
   
   useEffect(() => {
     if (message && window.location.pathname === `/${businessId}/search`) {
@@ -123,28 +129,41 @@ function Search() {
     } else if (sortBy === "Сначала дорогие") {
       sort = 1
     };
-    if (selectedCounts.length > 0 || selectedColors.length > 0 || selectedSizes.length > 0 || selectedPackages.length > 0) {
-      let filter_query = {}
-      if (selectedCategory === "Розы с любовью") {
+    
+    if (businessId) {
+      if (selectedCounts.length > 0 || selectedColors.length > 0 || selectedSizes.length > 0 || selectedPackages.length > 0) {
+        let filter_query = {
+          "business_id": businessId
+        }
+        
         if (selectedCounts.length > 0) {
           filter_query["counts"] = { $in: selectedCounts }
         }
         if (selectedColors.length > 0) {
           filter_query["colors"] = { $in: selectedColors }
         }
-        if (selectedColors.length > 0) {
+        if (selectedSizes.length > 0) {
           filter_query["sizes"] = { $in: selectedSizes }
         }
-        if (selectedColors.length > 0) {
+        if (selectedPackages.length > 0) {
           filter_query["packages"] = { $in: selectedPackages }
         }
+        
+        setPosts(prevState => prevState.filter((item) => {
+          // Фильтруем посты, которые не соответствуют текущим фильтрам
+          return !(selectedCounts.length > 0 && !selectedCounts.includes(item.counts)) ||
+                 !(selectedColors.length > 0 && !selectedColors.includes(item.colors)) ||
+                 !(selectedSizes.length > 0 && !selectedSizes.includes(item.sizes)) ||
+                 !(selectedPackages.length > 0 && !selectedPackages.includes(item.packages));
+        }));
+        
+        sendMessage(JSON.stringify(["cards", "filter", filter_query, 25, sort, price]));
+      } else {
+        // Загружаем все карточки бизнеса без дополнительных фильтров
+        sendMessage(JSON.stringify(["cards", "filter", {"business_id": businessId}, 25, sort, price]));
       }
-      setPosts(prevState => prevState.filter((item) => item.category !== selectedCategory))
-      sendMessage(JSON.stringify(["cards", "filter", {"category": selectedCategory, ...filter_query}, 25, sort, price]));
-    } else {
-      sendMessage(JSON.stringify(["cards", "filter", {"category": selectedCategory}, 25, sort, price]));
     }
-  }, [selectedCounts, selectedColors, selectedSizes, selectedPackages, selectedCategory, sortBy, price])
+  }, [selectedCounts, selectedColors, selectedSizes, selectedPackages, sortBy, price, businessId])
   
   return (
     <>
@@ -210,14 +229,11 @@ function Search() {
         </div>
         
         <Title 
-          text={'Товары'} 
+          text={'Все товары'} 
           allowGrid={() => setView("grid")} 
           allowBlocks={() => setView("list")} 
           selected={view} 
           canChangeTitle={false} 
-          choices={categories} 
-          selectedChoice={selectedCategory} 
-          setSelectedChoice={setSelectedCategory} 
         />
         
         {/* <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 20}}>
@@ -293,7 +309,7 @@ function Search() {
         
         {view === "grid" &&
         <div style={{display: "flex", flexWrap: "wrap", gap: 10, paddingTop: 20}}>
-          {posts.filter((post) => post.category === selectedCategory && (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).sort((a, b) => {
+          {posts.filter((post) => (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).sort((a, b) => {
             if (sortBy === "Сначала дорогие") {
               return b.price_number - a.price_number
             } else if (sortBy === "Сначала недорогие") {
@@ -309,7 +325,7 @@ function Search() {
         
         {view === "list" && 
         <div style={{display: "flex", flexFlow: "column", rowGap: 20, marginTop: 5}}>
-          {posts.filter((post) => post.category === selectedCategory && (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).sort((a, b) => {
+          {posts.filter((post) => (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).sort((a, b) => {
             if (sortBy === "Сначала дорогие") {
               return b.price_number - a.price_number
             } else if (sortBy === "Сначала недорогие") {
@@ -323,7 +339,7 @@ function Search() {
           ))}
         </div>}
         
-        {posts.filter((post) => post.category === selectedCategory && (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).length === 0 &&
+        {posts.filter((post) => (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).length === 0 &&
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -349,7 +365,6 @@ function Search() {
           setSelectedSizes={setSelectedSizes}
           selectedPackages={selectedPackages}
           setSelectedPackages={setSelectedPackages}
-          selectedCategory={selectedCategory}
           defaultPrice={price}
           setDefaultPrice={setPrice} 
         />

@@ -20,7 +20,6 @@ function Filter({
   setSelectedSizes,
   selectedPackages,
   setSelectedPackages,
-  selectedCategory,
   defaultPrice,
   setDefaultPrice
  }) {
@@ -187,7 +186,6 @@ function Filter({
             </Box>
           </div>
         </div>
-        {selectedCategory === "Розы с любовью" &&
         <>
           <div style={{paddingBottom: 30}}>
             <div style={{fontSize: 16, fontWeight: 300, paddingBottom: 10}}>Цвет</div>
@@ -321,7 +319,7 @@ function Filter({
               ))}
             </div>
           </div>
-        </>}
+        </>
         <div>
           <Button text="Применить" handleClick={handleSave} />
         </div>

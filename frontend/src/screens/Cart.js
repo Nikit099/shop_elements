@@ -532,7 +532,7 @@ function Cart() {
             }}>
                 <div style={{fontSize: 18, fontWeight: 300, color: "#bbb"}}>Ваша корзина пустая</div>
                 <div>
-                    <Button text={"Выбрать букет"} small={true} handleClick={() => navigate(`/${businessId}/search` , {replace: true})} style={{
+                    <Button text={"Вернуться к товарам"} small={true} handleClick={() => navigate(`/${businessId}/search` , {replace: true})} style={{
                         fontWeight: 500, 
                         fontSize: 16,
                         borderRadius: 12,

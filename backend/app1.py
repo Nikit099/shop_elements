@@ -14,7 +14,6 @@ from io import BytesIO
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from flask import Flask, send_from_directory, jsonify, request
-import urllib.parse  # 👈 Добавь этот импорт
 
 load_dotenv()
 
@@ -46,23 +45,6 @@ def prepare_data(data):
         return data
     else:
         return str(data)
-def verify_telegram_init_data(init_data: str, bot_token: str):
-    parsed_data = dict(urllib.parse.parse_qsl(init_data))
-    received_hash = parsed_data.pop("hash", None)
-    if not received_hash:
-        return None
-    data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed_data.items()))
-    
-    # Правильный secret_key
-    secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
-    calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
-    
-    if calculated_hash != received_hash:
-        return None  # Или добавьте print для дебага: print("Hashes:", calculated_hash, received_hash)
-    
-    user_str = parsed_data.get("user", "{}")
-    user = json.loads(user_str)
-    return user
 
 def get_or_create_user(telegram_data: dict):
     """Получает или создает пользователя в базе данных"""
@@ -105,106 +87,6 @@ def get_or_create_user(telegram_data: dict):
     except Exception as e:
         print(f"Error getting/creating user: {e}")
         return None
-import json
-from datetime import datetime
-
-def create_business(business_data, user_data):
-    """
-    Создает новый бизнес.
-    Возвращает tuple: (business_id | None, error_message | None)
-    При успехе: (business_id, None)
-    При ошибке: (None, "текст ошибки")
-    """
-    try:
-        name = business_data.get('name')
-        owner_id = business_data.get('owner_id')
-
-        if not name or not owner_id or not user_data:
-            return None, "Не переданы данные бизнеса или пользователя"
-
-        owner_id = str(owner_id)
-
-        # 1. Проверяем/создаем клиента
-        client_check = supabase.table('clients') \
-            .select('id') \
-            .eq('user_id', owner_id) \
-            .execute()
-
-        if not client_check.data or len(client_check.data) == 0:
-            new_client = {
-                'chat_id': user_data.get('id', owner_id),
-                'user_id': owner_id,
-                'first_name': user_data.get('first_name', ''),
-                'username': user_data.get('username', ''),
-                'ref_code': f"r_{owner_id}",
-                'ref_link': f"https://t.me/YOUR_BOT?start=r_{owner_id}",
-                'referrals_count': 0,
-                'registered_at': datetime.utcnow().isoformat(),
-                'updated_at': datetime.utcnow().isoformat(),
-                'created_at': datetime.utcnow().isoformat(),
-                'tokens': 0,
-                'free_tariff_active': False,
-                'tariff_expires_at': None,
-                'has_subscription': False
-            }
-            client_response = supabase.table('clients').insert(new_client).execute()
-            if not client_response.data:
-                return None, "Ошибка при создании клиента в базе данных"
-        # else: клиент уже есть — ок
-
-        # 2. Проверяем, есть ли уже бизнесы у этого владельца
-        businesses_check = supabase.table('businesses') \
-            .select('id, name') \
-            .eq('owner_id', owner_id) \
-            .execute()
-
-        if businesses_check.data and len(businesses_check.data) > 0:
-            existing_names = [b['name'] for b in businesses_check.data]
-            return None, f"У вас уже есть бизнес(ы): {', '.join(existing_names)}. Новый создать нельзя."
-
-        # 3. Проверяем уникальность имени бизнеса
-        existing_name = supabase.table('businesses') \
-            .select('id') \
-            .eq('name', name) \
-            .execute()
-
-        if existing_name.data and len(existing_name.data) > 0:
-            return None, f'Бизнес с названием "{name}" уже существует. Выберите другое название.'
-
-        # 4. Создаем бизнес
-        new_business = {'name': name, 'owner_id': owner_id}
-        response = supabase.table('businesses').insert(new_business).execute()
-
-        if response.data and len(response.data) > 0:
-            business_id = response.data[0]['id']
-
-            # 5. Настройки по умолчанию
-            default_settings = {
-                'business_id': business_id,
-                'business_name': name,
-                'logo_url': '',
-                'tagline': '',
-                'advantages': '',
-                'phone_number': '',
-                'telegram_url': '',
-                'whatsapp_url': '',
-                'address': '',
-                'yandex_map_url': '',
-                'yandex_reviews_url': '',
-                'call_to_action': '',
-                'faq': json.dumps([]),
-                'created_at': datetime.utcnow().isoformat(),
-                'updated_at': datetime.utcnow().isoformat()
-            }
-            supabase.table('business_settings').insert(default_settings).execute()
-
-            return business_id, None
-
-        return None, "Не удалось создать бизнес по неизвестной причине"
-
-    except Exception as e:
-        return None, f"Внутренняя ошибка сервера: {str(e)}"
-
 
 def check_business_owner(business_id: str, user_id: int) -> dict:
     """
@@ -274,23 +156,7 @@ def get_business_settings(business_id):
     except Exception as e:
         print(f"Error getting business settings: {e}")
         return None
-def get_business_by_tg_id(tg_id):
 
-    try:
-        response = supabase.table('businesses') \
-            .select('id') \
-            .eq('owner_id', tg_id) \
-            .limit(1) \
-            .execute()
-
-        if response.data and len(response.data) > 0:
-            return response.data[0]['id']
-
-        return None
-
-    except Exception as e:
-        print("Supabase error:", e)
-        return None
 def update_business_settings(settings_data):
     """Обновляет настройки бизнеса"""
     try:
@@ -572,10 +438,6 @@ def check_business_owner_endpoint(business_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({'status': 'ok'}), 200
-
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -583,7 +445,6 @@ def serve(path):
         return send_from_directory(app.static_folder, path)
     else:
         return send_from_directory(app.static_folder, 'index.html')
-
 
 # WebSocket события
 @socketio.on('connect')
@@ -914,85 +775,7 @@ def handle_message(message):
                 if logo_url:
                     emit('message', json.dumps(['business_settings', 'upload_logo', logo_url]))
                 else:
-                    emit('message', json.dumps(['error', 'logo_upload_failed']))  
-        elif message[0] == "get_bId":
-            if message[1] == "get":
-                payload = message[2]
-                init_data = payload.get("initData")
-                # init_data = "user=%7B%22id%22%3A709652754%2C%22first_name%22%3A%22%D0%9D%D0%B8%D0%BA%D0%B8%D1%82%D0%B0%22%2C%22last_name%22%3A%22%22%2C%22username%22%3A%22Nikitalsa%22%2C%22language_code%22%3A%22ru%22%2C%22is_premium%22%3Atrue%2C%22allows_write_to_pm%22%3Atrue%2C%22photo_url%22%3A%22https%3A%5C%2F%5C%2Ft.me%5C%2Fi%5C%2Fuserpic%5C%2F320%5C%2Fo_LrUJLTfkvZCTQwNQ66VpCZ9vcyFLbguHFkFSi19lE.svg%22%7D&chat_instance=8811103015501849481&chat_type=private&auth_date=1773464886&signature=ZuhCmSyPWiXM9fOh8dn3G1eW2OPjHdI3MGW52IZdRydSKGVcyVfJnIVA7UXWWwuYmbxwmymPfMhqD3UR9CTlCg&hash=ce69f26b5b55b25b361d815eb254c36815a5c49d407a993e8951c95b622f9111"
-                if not init_data:
-
-                    emit("message", json.dumps([
-                        "get_bId",
-                        "error",
-                        {"reason": "no initData"}
-                    ]))
-
-                    return
-                # test_mode_user = {
-                #     "id": 709652754,  # любое число
-                #     "first_name": "Test",
-                #     "username": "test_user"
-                # }
-
-                # tg_id = test_mode_user["id"]
-                # print(f"Ищем бизнес для tg_id: {tg_id}")
-                # # ищем бизнес по tg_id в Supabase
-                # try:
-                #     response = supabase.table('businesses') \
-                #         .select('id') \
-                #         .eq('owner_id', tg_id) \
-                #         .limit(1) \
-                #         .execute()
-
-                #     print(f"Результат запроса: {response.data}")
-                #     business_id = response.data[0]['id'] if response.data else None
-                #     print(f"Найден business_id: {business_id}")
-
-                # except Exception as e:
-                #     print("Supabase error:", e)
-                #     business_id = None
-
-                # emit("message", json.dumps([
-                #     "get_bId",
-                #     "result",
-                #     {"business_id": business_id}
-                # ]))
-                
-                user = verify_telegram_init_data(init_data, TELEGRAM_BOT_TOKEN)
-
-                if not user:
-
-                    emit("message", json.dumps([
-                        "get_bId",
-                        "error",
-                        {"reason": "invalid telegram auth"}
-                    ]))
-
-                    return
-
-                tg_id = user["id"]
-
-                business_id = get_business_by_tg_id(tg_id)
-
-                emit("message", json.dumps([
-                    "get_bId",
-                    "result",
-                    {
-                        "business_id": business_id
-                    }
-                ]))
-        elif message[0] == "business":
-            if message[1] == "create":
-                business_data = message[2]
-                user_from_tg = message[3]
-                business_id, error_message = create_business(business_data, user_from_tg)
-
-                if business_id:
-                    emit('message', json.dumps(['business', 'create', 'success', business_id]))
-                else:
-                    # error_message уже человеко-понятный текст
-                    emit('message', json.dumps(['business', 'create', 'error', error_message or 'Не удалось создать бизнес']))
+                    emit('message', json.dumps(['error', 'logo_upload_failed']))       
     except Exception as e:
         print(f"Error: {e}")
         emit('message', json.dumps(['error', str(e)]))

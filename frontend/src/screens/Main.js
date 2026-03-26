@@ -6,13 +6,26 @@ import { useMainContext } from '../context';
 
 
 function Main() {
-  const { sendMessage, message, setMessage, theme, setTheme,isBusinessOwner, loading, businessId } = useMainContext();
+  const { 
+    sendMessage, 
+    message, 
+    setMessage, 
+    theme, 
+    setTheme, 
+    isBusinessOwner, 
+    loading, 
+    businessId,
+    businessSettings,
+    businessCards,
+    loadBusinessSettings,
+    loadBusinessCards
+  } = useMainContext();
 
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const cardId = params.get('card_id');
   const navigate = useNavigate();
-  const [ posts, setPosts ] = useState([]);
+  // Используем businessCards из контекста вместо локального состояния posts
   
   // Используем ref для отслеживания, был ли уже обработан card_id
   const hasProcessedCardIdRef = useRef(false);
@@ -68,50 +81,32 @@ function Main() {
     }
   };
 
+  // Фильтруем карточки для главной страницы (только "Розы с любовью")
+  const filteredPosts = businessCards.filter(card => 
+    card.category === "Розы с любовью" && card.business_id === businessId
+  ).slice(0, 6); // Берем только 6 карточек для главной страницы
+
+  // При изменении businessId загружаем данные через контекст
   useEffect(() => {
-    if (!businessId) {   
-      setPosts([]);
-      return; 
-    }
+    if (!businessId) return;
     
-    console.log("Загрузка данных для businessId:", businessId);
+    console.log("Main: Загружаем данные для businessId:", businessId);
     window.scrollTo({top: 0, smooth: "behavior"});
     
-    // Сбрасываем посты при смене businessId
-    setPosts([]);
-    
-    const filters = {"category": "Розы с любовью", "business_id": businessId};
-    sendMessage(JSON.stringify(["cards", "filter", filters, 6]));
-  }, [businessId])
-
-  useEffect(() => {
-    
-    if (message && window.location.pathname === `/${businessId}`) {
-      console.log(message)
-      if (message[0] === 'cards') {
-        if (message[1] === 'filter') {
-          setPosts(prevState => [...prevState, ...message[2].filter(item => {
-            const isInMessage = prevState.some(msgItem => msgItem._id === item._id);
-            return !isInMessage;
-          })]);
-        }
-      }
-      setMessage(null);
-    };
-  }, [message]);
-    // Загрузка настроек бизнеса
-  const [businessSettings, setBusinessSettings] = useState(null);
-  
-  
-  useEffect(() => {
-    if (businessId) {
-      sendMessage(JSON.stringify(["business_settings", "get", { business_id: businessId }]));
-    }
+    // Загружаем настройки и карточки через контекст
+    loadBusinessSettings(businessId);
+    loadBusinessCards(businessId, 100);
   }, [businessId]);
 
+  // Для загрузки конкретной карточки по card_id в URL
   useEffect(() => {
-    if (message && message[0] === 'business_settings' && message[1] === 'get') {
-      setBusinessSettings(message[2]);
+    if (message && window.location.pathname === `/${businessId}`) {
+      console.log("Main: Получено сообщение:", message);
+      
+      // Обработка загрузки конкретной карточки по card_id
+      if (message[0] === 'cards' && message[1] === 'filter') {
+        // Контекст уже обрабатывает эти сообщения для сохранения businessCards
+      }
       setMessage(null);
     }
   }, [message]);
@@ -233,9 +228,9 @@ function Main() {
         ))}
       </div> */}
       <div style={{display: "flex", flexWrap: "wrap", gap: 10, paddingTop: 20, borderBottom: theme === "Dark" ? "0.5px solid #ffffff5c" : "0.5px solid #18181a3e", paddingBottom: 20}}>
-        {posts.length > 0 ?
+        {filteredPosts.length > 0 ?
           <>
-            {posts.map((post, index) => (
+            {filteredPosts.map((post, index) => (
               <div key={post._id}>
                 {index === 2 &&
                 <Post postData={post} type="old-big" basePathUrl="/" />}
@@ -252,7 +247,7 @@ function Main() {
           </div>
         }
       </div>
-      {posts.length > 0 &&
+      {filteredPosts.length > 0 &&
       <div style={{marginTop: 15, display: "flex", justifyContent: "center", color: theme ==="Dark" ? "#dfdfdfff" : "#2d2d2dff", fontWeight: 300, fontSize: 15, alignItems: "center", gap: 8}} onClick={() => navigate(`/${businessId}/search`)}>
         Показать всё <img src={require("../components/images/arrow-right.svg").default} alt="" style={{display: "flex", marginTop: 1, filter: "brightness(0.6)"}} />
       </div>}

@@ -6,7 +6,17 @@ import styles from './styles/BusinessSettings.module.css';
 function BusinessSettings() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, businessId, isBusinessOwner, sendMessage, message, setMessage } = useMainContext();
+  const { 
+    theme, 
+    businessId, 
+    isBusinessOwner, 
+    sendMessage, 
+    message, 
+    setMessage,
+    businessSettings,
+    businessSettingsLoaded,
+    loadBusinessSettings
+  } = useMainContext();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,58 +46,91 @@ function BusinessSettings() {
       return;
     }
     
-    loadBusinessSettings();
-  }, [businessId, isBusinessOwner]);
-
-  // Обработка сообщений от сервера
-useEffect(() => {
-  if (!message) return;
-
-  console.log('BusinessSettings received message:', message);
-
-  if (message[0] === 'business_settings') {
-    if (message[1] === 'get') {
-      const settings = message[2];
-      if (settings) {
-        let faqData = settings.faq || [];
-        
-        setFormData({
-          logo_url: settings.logo_url || '',
-          business_name: settings.business_name || '',
-          tagline: settings.tagline || '',
-          advantages: settings.advantages || '',
-          phone_number: settings.phone_number || '',
-          telegram_url: settings.telegram_url || '',
-          whatsapp_url: settings.whatsapp_url || '',
-          address: settings.address || '',
-          yandex_map_url: settings.yandex_map_url || '',
-          yandex_reviews_url: settings.yandex_reviews_url || '',
-          call_to_action: settings.call_to_action || '',
-          faq: faqData
-        });
-        
-        if (settings.logo_url) {
-          setLogoPreview(settings.logo_url);
-        }
+    // Если настройки уже загружены в контекст, используем их
+    if (businessSettingsLoaded && businessSettings) {
+      let faqData = businessSettings.faq || [];
+      
+      setFormData({
+        logo_url: businessSettings.logo_url || '',
+        business_name: businessSettings.business_name || '',
+        tagline: businessSettings.tagline || '',
+        advantages: businessSettings.advantages || '',
+        phone_number: businessSettings.phone_number || '',
+        telegram_url: businessSettings.telegram_url || '',
+        whatsapp_url: businessSettings.whatsapp_url || '',
+        address: businessSettings.address || '',
+        yandex_map_url: businessSettings.yandex_map_url || '',
+        yandex_reviews_url: businessSettings.yandex_reviews_url || '',
+        call_to_action: businessSettings.call_to_action || '',
+        faq: faqData
+      });
+      
+      if (businessSettings.logo_url) {
+        setLogoPreview(businessSettings.logo_url);
       }
+      
       setLoading(false);
-    } else if (message[1] === 'update') {
-      setSaving(false);
-      alert('Настройки успешно сохранены!');
-      navigate(`/${businessId}`);
-    } else if (message[1] === 'upload_logo') {
-      const logoUrl = message[2];
-      setFormData(prev => ({ ...prev, logo_url: logoUrl }));
-      setLogoPreview(logoUrl);
+    } else {
+      // Иначе загружаем настройки через контекст
+      loadBusinessSettings(businessId);
     }
-  }
+  }, [businessId, isBusinessOwner, businessSettings, businessSettingsLoaded]);
 
-  setMessage(null);
-}, [message]);
+  // Обработка сообщений от сервера для обновлений
+  useEffect(() => {
+    if (!message) return;
 
-  const loadBusinessSettings = () => {
-    sendMessage(JSON.stringify(['business_settings', 'get', { business_id: businessId }]));
-  };
+    console.log('BusinessSettings received message:', message);
+
+    if (message[0] === 'business_settings') {
+      if (message[1] === 'update') {
+        setSaving(false);
+        alert('Настройки успешно сохранены!');
+        // Перезагружаем настройки через контекст
+        loadBusinessSettings(businessId);
+        // Не навигация сразу, чтобы дать время на перезагрузку данных
+        setTimeout(() => {
+          navigate(`/${businessId}`);
+        }, 500);
+      } else if (message[1] === 'upload_logo') {
+        const logoUrl = message[2];
+        setFormData(prev => ({ ...prev, logo_url: logoUrl }));
+        setLogoPreview(logoUrl);
+        // После загрузки логотипа обновляем данные через контекст
+        loadBusinessSettings(businessId);
+      }
+    }
+
+    setMessage(null);
+  }, [message]);
+
+  // Дополнительный эффект для обработки загруженных через контекст настроек
+  useEffect(() => {
+    if (businessSettingsLoaded && businessSettings && !loading) {
+      let faqData = businessSettings.faq || [];
+      
+      setFormData({
+        logo_url: businessSettings.logo_url || '',
+        business_name: businessSettings.business_name || '',
+        tagline: businessSettings.tagline || '',
+        advantages: businessSettings.advantages || '',
+        phone_number: businessSettings.phone_number || '',
+        telegram_url: businessSettings.telegram_url || '',
+        whatsapp_url: businessSettings.whatsapp_url || '',
+        address: businessSettings.address || '',
+        yandex_map_url: businessSettings.yandex_map_url || '',
+        yandex_reviews_url: businessSettings.yandex_reviews_url || '',
+        call_to_action: businessSettings.call_to_action || '',
+        faq: faqData
+      });
+      
+      if (businessSettings.logo_url) {
+        setLogoPreview(businessSettings.logo_url);
+      }
+      
+      setLoading(false);
+    }
+  }, [businessSettings, businessSettingsLoaded]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

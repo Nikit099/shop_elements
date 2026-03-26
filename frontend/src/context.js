@@ -10,7 +10,7 @@ const SocketProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     // Восстанавливаем тему из localStorage при инициализации
     const savedTheme = localStorage.getItem('theme');
-    return savedTheme || "Light";
+    return savedTheme || "Dark";
   });
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,6 +58,30 @@ const SocketProvider = ({ children }) => {
     const savedShopInfo = localStorage.getItem('shop_info');
     return savedShopInfo ? JSON.parse(savedShopInfo) : null;
   });
+
+  // Новые состояния для кэширования данных бизнеса
+  const [businessSettings, setBusinessSettings] = useState(() => {
+    if (businessId) {
+      const saved = localStorage.getItem(`businessSettings_${businessId}`);
+      return saved ? JSON.parse(saved) : null;
+    }
+    return null;
+  });
+  
+  const [businessCards, setBusinessCards] = useState(() => {
+    if (businessId) {
+      const saved = localStorage.getItem(`businessCards_${businessId}`);
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  
+  // Состояние для подарков (храним только в памяти, не в localStorage)
+  const [businessGifts, setBusinessGifts] = useState([]);
+  const [businessGiftsLoaded, setBusinessGiftsLoaded] = useState(false);
+  
+  const [businessSettingsLoaded, setBusinessSettingsLoaded] = useState(false);
+  const [businessCardsLoaded, setBusinessCardsLoaded] = useState(false);
 
   // Остальные состояния...
   const [socket, setSocket] = useState(null);
@@ -241,6 +265,148 @@ const SocketProvider = ({ children }) => {
     }
   };
 
+  // Функция для загрузки бизнес-настроек
+  const loadBusinessSettings = (bId) => {
+    if (!bId) return;
+    
+    // Если уже загружены для этого бизнеса - не загружаем снова
+    if (businessSettings && businessSettings.business_id === bId && businessSettingsLoaded) {
+      console.log("Business settings уже загружены для бизнеса:", bId);
+      return;
+    }
+    
+    // Сбрасываем флаг загрузки и загружаем
+    console.log("Загружаем business settings для бизнеса:", bId);
+    setBusinessSettingsLoaded(false);
+    sendMessage(JSON.stringify(["business_settings", "get", { business_id: bId }]));
+  };
+
+  // Функция для загрузки карточек
+  const loadBusinessCards = (bId, limit = 100) => {
+    if (!bId) return;
+    
+    // Если уже загружены для этого бизнеса - не загружаем снова
+    if (businessCards.length > 0 && businessCardsLoaded) {
+      console.log("Business cards уже загружены для бизнеса:", bId, businessCards.length, "карточек");
+      return;
+    }
+    
+    // Сбрасываем флаг загрузки и загружаем
+    console.log("Загружаем business cards для бизнеса:", bId, "лимит:", limit);
+    setBusinessCardsLoaded(false);
+    sendMessage(JSON.stringify(["cards", "filter", { business_id: bId }, limit]));
+  };
+
+  // Функция для загрузки подарков
+  const loadBusinessGifts = (bId, limit = 10) => {
+    if (!bId) return;
+    
+    // Если уже загружены для этого бизнеса - не загружаем снова
+    if (businessGifts.length > 0 && businessGiftsLoaded) {
+      console.log("Business gifts уже загружены для бизнеса:", bId, businessGifts.length, "подарков");
+      return;
+    }
+    
+    // Сбрасываем флаг загрузки и загружаем
+    console.log("Загружаем business gifts для бизнеса:", bId, "лимит:", limit);
+    setBusinessGiftsLoaded(false);
+    sendMessage(JSON.stringify(["cards", "filter", { business_id: bId, category: "Подарки" }, limit]));
+  };
+
+  // Функция для очистки данных бизнеса
+  const clearBusinessData = () => {
+    console.log("Очищаем данные бизнеса для:", businessId);
+    setBusinessSettings(null);
+    setBusinessCards([]);
+    setBusinessSettingsLoaded(false);
+    setBusinessCardsLoaded(false);
+    
+    // Очищаем localStorage
+    if (businessId) {
+      localStorage.removeItem(`businessSettings_${businessId}`);
+      localStorage.removeItem(`businessCards_${businessId}`);
+    }
+  };
+
+  // Обработка сообщений для сохранения данных бизнеса
+  useEffect(() => {
+    if (!message) return;
+
+    console.log("Context обработка сообщения:", message);
+
+    if (message[0] === 'business_settings') {
+      if (message[1] === 'get') {
+        const settings = message[2];
+        if (settings) {
+          setBusinessSettings(settings);
+          setBusinessSettingsLoaded(true);
+          // Сохраняем в localStorage для persistence
+          if (businessId) {
+            localStorage.setItem(`businessSettings_${businessId}`, JSON.stringify(settings));
+          }
+          console.log("Business settings сохранены в контекст для бизнеса:", businessId);
+        }
+      } else if (message[1] === 'update') {
+        // После обновления настроек нужно перезагрузить данные
+        if (businessId) {
+          loadBusinessSettings(businessId);
+        }
+      }
+    }
+    
+    if (message[0] === 'cards') {
+      if (message[1] === 'filter') {
+        const cards = message[2];
+        const filters = message[3]; // Фильтры из запроса
+        const bId = businessId; // Используем текущий businessId из состояния
+        
+        // Проверяем, не является ли это запросом на подарки (для корзины)
+        // Если фильтры содержат category: "Подарки", то не сохраняем в businessCards
+        const isGiftRequest = filters && 
+                             ((typeof filters === 'object' && filters.category === "Подарки") ||
+                              (Array.isArray(filters) && filters.length > 0 && 
+                               filters.some(f => f && typeof f === 'object' && f.category === "Подарки")));
+        
+        if (bId && cards && !isGiftRequest) {
+          setBusinessCards(cards);
+          setBusinessCardsLoaded(true);
+          // Сохраняем в localStorage для persistence
+          localStorage.setItem(`businessCards_${bId}`, JSON.stringify(cards));
+          console.log("Business cards сохранены в контекст для бизнеса:", bId, cards.length, "карточек");
+        } else if (isGiftRequest) {
+          console.log("Запрос на подарки - сохраняем в businessGifts");
+          // Сохраняем подарки в отдельное состояние
+          if (bId && cards) {
+            setBusinessGifts(cards);
+            setBusinessGiftsLoaded(true);
+            console.log("Business gifts сохранены в контекст для бизнеса:", bId, cards.length, "подарков");
+          }
+        }
+      }
+    }
+    
+    // Передаем сообщение дальше для обработки в компонентах
+    if (messages.length > 0) {
+      setMessage(messages[0]);
+      setMessages(prevMessages => prevMessages.slice(1));
+    } else {
+      setMessage(null);
+    }
+  }, [message, messages, businessId]);
+
+  // Автоматическая загрузка данных при изменении businessId
+  useEffect(() => {
+    if (businessId) {
+      console.log("BusinessId изменился, загружаем данные для:", businessId);
+      loadBusinessSettings(businessId);
+      loadBusinessCards(businessId, 100);
+      loadBusinessGifts(businessId, 10);
+    } else {
+      // Сбрасываем данные при смене бизнеса
+      clearBusinessData();
+    }
+  }, [businessId]);
+
   return (
     <SocketContext.Provider value={{
       sendMessage,
@@ -295,6 +461,21 @@ const SocketProvider = ({ children }) => {
       setOpenPost,
       cartItems,
       setCartItems,
+      // Новые значения для работы с данными бизнеса
+      businessSettings,
+      businessCards,
+      businessSettingsLoaded,
+      businessCardsLoaded,
+      loadBusinessSettings,
+      loadBusinessCards,
+      setBusinessSettings,
+      setBusinessCards,
+      clearBusinessData,
+      // Новые значения для работы с подарками
+      businessGifts,
+      businessGiftsLoaded,
+      loadBusinessGifts,
+      setBusinessGifts,
     }}>
       {children}
     </SocketContext.Provider>

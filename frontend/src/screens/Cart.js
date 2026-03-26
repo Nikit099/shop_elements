@@ -59,7 +59,7 @@ function Cart() {
         { name: "receiver_name" },
         { name: "receiver_phone" },
     ]))
-    const { cartItems, setCartItems, sendMessage, message, setMessage, businessId } = useMainContext();
+    const { cartItems, setCartItems, sendMessage, message, setMessage, businessId, businessGifts } = useMainContext();
     const [ inputs, setInputs ] = useState({
         "delivery": {
             value: "Курьером",
@@ -228,7 +228,6 @@ function Cart() {
         },
     });
     useEffect(() => {
-        sendMessage(JSON.stringify(["cards", "filter", {"category": "Подарки"}, 10]))
         window.scrollTo({top: 0, smooth: "behavior"});
     }, [])
     const handleCart = (index, type) => {
@@ -328,21 +327,9 @@ function Cart() {
           setMessage(null);
         };
     }, [message]);
-    const [ posts, setPosts ] = useState([]);
-    useEffect(() => {
-        console.log(message);
-        if (message && window.location.pathname ===`/${businessId}/cart`) {
-          if (message[0] === 'cards') {
-            if (message[1] === 'filter') {
-              setPosts(prevState => [...prevState, ...message[2].filter(item => {
-                const isInMessage = prevState.some(msgItem => msgItem._id === item._id);
-                return !isInMessage;
-              })]);
-            }
-          }
-          setMessage(null);
-        };
-      }, [message]);
+    // Используем подарки из контекста вместо локального состояния
+    const gifts = businessGifts.filter(gift => gift.category === "Подарки");
+    
     if (cartItems.length > 0) {
         return (
             <div className="view">
@@ -396,16 +383,18 @@ function Cart() {
                         </div>
                     ))}
                 </div>
-                {(posts.filter((post) => post.category === "Подарки" && !cartItems.some((item) => item.product._id === post._id)).length > 0) &&
+                {(gifts.length > 0 && gifts.some(gift => !cartItems.some(item => item.product._id === gift._id))) &&
                 <div style={{marginLeft: -15}}>
                     <div style={{padding: "20px 0 15px 15px", fontSize: 16, fontWeight: 300}}>
                         Рекомендуем дополнить заказ
                     </div>
                     <div style={{borderBottom: "0.5px solid #18181A", overflowX: "auto", width: "100vw", paddingBottom: 15}} className="no-scrollbar">
                         <div style={{display: "flex", flexWrap: "nowrap", gap: 10, paddingLeft: 15}}>
-                            {posts.filter((post) => post.category === "Подарки" && !cartItems.some((item) => item.product._id === post._id)).map((post, index) => (
-                                <div key={post._id} style={{paddingRight: index === posts.filter((post) => post.category === "Подарки" && !cartItems.some((item) => item.product._id === post._id)).length - 1 ? 15 : 0}}>
-                                    <Post postData={post} type="block-small" basePathUrl={"/cart"}/>
+                            {gifts
+                                .filter(gift => !cartItems.some(item => item.product._id === gift._id))
+                                .map((gift, index, filteredGifts) => (
+                                <div key={gift._id} style={{paddingRight: index === filteredGifts.length - 1 ? 15 : 0}}>
+                                    <Post postData={gift} type="block-small" basePathUrl={"/cart"}/>
                                 </div>
                             ))}
                         </div>

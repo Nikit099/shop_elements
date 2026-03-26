@@ -11,14 +11,35 @@ function Search() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const cardId = params.get('card_id');
-  const { sendMessage, message, setMessage, theme, setTheme, businessId } = useMainContext();
+  const { 
+    sendMessage, 
+    message, 
+    setMessage, 
+    theme, 
+    setTheme, 
+    businessId,
+    businessSettings,
+    businessCards,
+    loadBusinessSettings,
+    loadBusinessCards
+  } = useMainContext();
   const navigate = useNavigate();
   const [ view, setView ] = useState("grid");
   const [ sortBy, setSortBy ] = useState("Сначала популярные");
-  const [ posts, setPosts ] = useState([]);
+  const [ filteredPosts, setFilteredPosts ] = useState([]);
+  const [ isOpenFilter, setIsOpenFilter ] = useState(false);
   
-  // Загрузка настроек бизнеса
-  const [businessSettings, setBusinessSettings] = useState(null);
+  const counts = [
+    "19 роз",
+    "29 роз",
+    "51 роза",
+    "101 роза"
+  ];
+  const [ selectedCounts, setSelectedCounts ] = useState([]);
+  const [ selectedColors, setSelectedColors ] = useState([]);
+  const [ selectedSizes, setSelectedSizes ] = useState([]);
+  const [ selectedPackages, setSelectedPackages ] = useState([]);
+  const [ price, setPrice ] = useState([]);
   
   // Используем ref для отслеживания, был ли уже обработан card_id
   const hasProcessedCardIdRef = useRef(false);
@@ -55,32 +76,52 @@ function Search() {
     window.scrollTo({top: 0, smooth: "behavior"});
   }, [])
   
-  // Загрузка настроек бизнеса
+  // При изменении businessId загружаем данные через контекст
   useEffect(() => {
     if (businessId) {
-      sendMessage(JSON.stringify(["business_settings", "get", { business_id: businessId }]));
+      console.log("Search: Загружаем данные для businessId:", businessId);
+      loadBusinessSettings(businessId);
+      loadBusinessCards(businessId, 100); // Загружаем больше карточек для поиска
     }
   }, [businessId]);
 
+  // Для загрузки конкретной карточки по card_id в URL
   useEffect(() => {
-    if (message && message[0] === 'business_settings' && message[1] === 'get') {
-      setBusinessSettings(message[2]);
+    if (message && window.location.pathname === `/${businessId}/search`) {
+      console.log("Search: Получено сообщение для загрузки карточки:", message);
       setMessage(null);
     }
   }, [message]);
   
-  // Загрузка карточек при монтировании компонента
+  // Фильтрация карточек на основе выбранных фильтров
   useEffect(() => {
-    if (businessId) {
-      console.log("Загрузка карточек для бизнеса:", businessId);
-      setPosts([]); // Сбрасываем посты при смене бизнеса
-      
-      // Загружаем карточки с фильтрацией по business_id
-      sendMessage(JSON.stringify(["cards", "filter", {"business_id": businessId}, 25]));
-    }
-  }, [businessId]);
-  
-  const [ isOpenFilter, setIsOpenFilter ] = useState(false);
+    if (!businessId || businessCards.length === 0) return;
+    
+    console.log("Search: Фильтрация карточек с применением фильтров");
+    
+    let filtered = businessCards.filter(card => 
+      card.business_id === businessId &&
+      (!price[0] || card.price_number >= price[0]) &&
+      (!price[1] || card.price_number <= price[1]) &&
+      (selectedCounts.length === 0 || selectedCounts.some(count => card.counts?.includes?.(count))) &&
+      (selectedColors.length === 0 || selectedColors.some(color => card.colors?.includes?.(color))) &&
+      (selectedSizes.length === 0 || selectedSizes.some(size => card.sizes?.includes?.(size))) &&
+      (selectedPackages.length === 0 || selectedPackages.some(pkg => card.packages?.includes?.(pkg)))
+    );
+    
+    // Сортировка
+    filtered = filtered.sort((a, b) => {
+      if (sortBy === "Сначала дорогие") {
+        return b.price_number - a.price_number;
+      } else if (sortBy === "Сначала недорогие") {
+        return a.price_number - b.price_number;
+      }
+      // По умолчанию: сначала популярные (оставляем как есть)
+      return 0;
+    });
+    
+    setFilteredPosts(filtered);
+  }, [businessCards, businessId, selectedCounts, selectedColors, selectedSizes, selectedPackages, sortBy, price]);
   
   const openFilter = () => {
     setIsOpenFilter(true);
@@ -96,74 +137,7 @@ function Search() {
     }
   }, [isOpenFilter])
   
-  const counts = [
-    "19 роз",
-    "29 роз",
-    "51 роза",
-    "101 роза"
-  ]
-  const [ selectedCounts, setSelectedCounts ] = useState([]);
-  const [ selectedColors, setSelectedColors ] = useState([]);
-  const [ selectedSizes, setSelectedSizes ] = useState([]);
-  const [ selectedPackages, setSelectedPackages ] = useState([]);
-  const [ price, setPrice ] = useState([]);
-  
-  useEffect(() => {
-    if (message && window.location.pathname === `/${businessId}/search`) {
-      if (message[0] === 'cards') {
-        if (message[1] === 'filter') {
-          setPosts(prevState => [...prevState, ...message[2].filter(item => {
-            const isInMessage = prevState.some(msgItem => msgItem._id === item._id);
-            return !isInMessage;
-          })]);
-        }
-      }
-      setMessage(null);
-    };
-  }, [message]);
-  
-  useEffect(() => {
-    let sort = 0;
-    if (sortBy === "Сначала недорогие") {
-      sort = 2
-    } else if (sortBy === "Сначала дорогие") {
-      sort = 1
-    };
-    
-    if (businessId) {
-      if (selectedCounts.length > 0 || selectedColors.length > 0 || selectedSizes.length > 0 || selectedPackages.length > 0) {
-        let filter_query = {
-          "business_id": businessId
-        }
-        
-        if (selectedCounts.length > 0) {
-          filter_query["counts"] = { $in: selectedCounts }
-        }
-        if (selectedColors.length > 0) {
-          filter_query["colors"] = { $in: selectedColors }
-        }
-        if (selectedSizes.length > 0) {
-          filter_query["sizes"] = { $in: selectedSizes }
-        }
-        if (selectedPackages.length > 0) {
-          filter_query["packages"] = { $in: selectedPackages }
-        }
-        
-        setPosts(prevState => prevState.filter((item) => {
-          // Фильтруем посты, которые не соответствуют текущим фильтрам
-          return !(selectedCounts.length > 0 && !selectedCounts.includes(item.counts)) ||
-                 !(selectedColors.length > 0 && !selectedColors.includes(item.colors)) ||
-                 !(selectedSizes.length > 0 && !selectedSizes.includes(item.sizes)) ||
-                 !(selectedPackages.length > 0 && !selectedPackages.includes(item.packages));
-        }));
-        
-        sendMessage(JSON.stringify(["cards", "filter", filter_query, 25, sort, price]));
-      } else {
-        // Загружаем все карточки бизнеса без дополнительных фильтров
-        sendMessage(JSON.stringify(["cards", "filter", {"business_id": businessId}, 25, sort, price]));
-      }
-    }
-  }, [selectedCounts, selectedColors, selectedSizes, selectedPackages, sortBy, price, businessId])
+  // Удалены старые эффекты загрузки данных, так как теперь используем контекст
   
   return (
     <>
@@ -309,14 +283,7 @@ function Search() {
         
         {view === "grid" &&
         <div style={{display: "flex", flexWrap: "wrap", gap: 10, paddingTop: 20}}>
-          {posts.filter((post) => (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).sort((a, b) => {
-            if (sortBy === "Сначала дорогие") {
-              return b.price_number - a.price_number
-            } else if (sortBy === "Сначала недорогие") {
-              return a.price_number - b.price_number
-            }
-            return 0;
-          }).map((post) => (
+          {filteredPosts.map((post) => (
             <div key={post._id}>
               <Post postData={post} type="block" basePathUrl="/search" />
             </div>
@@ -325,21 +292,14 @@ function Search() {
         
         {view === "list" && 
         <div style={{display: "flex", flexFlow: "column", rowGap: 20, marginTop: 5}}>
-          {posts.filter((post) => (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).sort((a, b) => {
-            if (sortBy === "Сначала дорогие") {
-              return b.price_number - a.price_number
-            } else if (sortBy === "Сначала недорогие") {
-              return a.price_number - b.price_number
-            }
-            return 0;
-          }).map((post) => (
+          {filteredPosts.map((post) => (
             <div key={post._id}>
               <Post postData={post} type="line" basePathUrl="/search" />
             </div>
           ))}
         </div>}
         
-        {posts.filter((post) => (!price[0] || post.price_number >= price[0]) && (!price[1] || post.price_number <= price[1])).length === 0 &&
+        {filteredPosts.length === 0 &&
         <div style={{
           display: "flex",
           alignItems: "center",

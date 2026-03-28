@@ -24,7 +24,27 @@ const SocketProvider = ({ children }) => {
   // Telegram user data
   const [telegramUser, setTelegramUser] = useState(() => {
     try {
-      const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      // const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      const user = {
+  "id": 709652754,
+  "is_bot": false,
+  "first_name": "Nikita",
+  "last_name": "Nechitailov",
+  "username": "nechitailov",
+  "language_code": "ru",
+  "is_premium": false,
+  "added_to_attachment_menu": false,
+  "can_join_groups": true,
+  "can_read_all_group_messages": false,
+  "supports_inline_queries": false,
+  "full_name": "Nikita Nechitailov",
+  "display_name": "Nikita",
+  "meta": {
+    "source": "telegram_bot_api",
+    "last_seen_at": "2026-03-26T20:50:00Z",
+    "chat_type": "private"
+  }
+};
       return user || null;
     } catch (e) {
       return null;
@@ -34,11 +54,11 @@ const SocketProvider = ({ children }) => {
   // Проверка владельца магазина
   const [isBusinessOwner, setIsBusinessOwner] = useState(() => {
     // Проверяем режим тестирования
-    const testMode = localStorage.getItem('test') === 'true';
-    if (testMode) {
-      console.log("Режим тестирования активирован - пользователь считается владельцем магазина");
-      return true;
-    }
+    // const testMode = localStorage.getItem('test') === 'true';
+    // if (testMode) {
+    //   console.log("Режим тестирования активирован - пользователь считается владельцем магазина");
+    //   return true;
+    // }
 
     const savedOwnerInfo = localStorage.getItem('ownerInfo');
     const savedIsOwner = localStorage.getItem('isBusinessOwner');
@@ -105,19 +125,19 @@ const SocketProvider = ({ children }) => {
   // Функция для проверки владельца магазина
   const checkBusinessOwner = async (businessId) => {
     // Проверяем режим тестирования
-    const testMode = localStorage.getItem('test') === 'true';
-    if (testMode) {
-      console.log("Режим тестирования: пользователь считается владельцем магазина для бизнеса:", businessId);
-      const ownerInfo = {
-        businessId: businessId,
-        userId: telegramUser?.id || 999999999, // Тестовый ID
-        timestamp: Date.now()
-      };
-      localStorage.setItem('ownerInfo', JSON.stringify(ownerInfo));
-      localStorage.setItem('isBusinessOwner', 'true');
-      setIsBusinessOwner(true);
-      return true;
-    }
+    // const testMode = localStorage.getItem('test') === 'true';
+    // if (testMode) {
+    //   console.log("Режим тестирования: пользователь считается владельцем магазина для бизнеса:", businessId);
+    //   const ownerInfo = {
+    //     businessId: businessId,
+    //     userId: telegramUser?.id || 999999999, // Тестовый ID
+    //     timestamp: Date.now()
+    //   };
+    //   localStorage.setItem('ownerInfo', JSON.stringify(ownerInfo));
+    //   localStorage.setItem('isBusinessOwner', 'true');
+    //   setIsBusinessOwner(true);
+    //   return true;
+    // }
 
     if (!telegramUser || !telegramUser.id) {
       console.log("Пользователь не авторизован через Telegram");

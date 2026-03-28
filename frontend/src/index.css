@@ -24,6 +24,11 @@
   --element-bg-dark: rgb(24, 24, 26);
   --element-bg-light: rgb(230, 230, 235);
   --gradient-red: linear-gradient(125deg, rgb(239 7 50) 0%, rgb(253 68 59) 100%);
+  --gradient-blue: linear-gradient(125deg, rgb(0, 136, 204) 0%, rgb(0, 102, 153) 100%);
+  --surface-darker-dark: #0A0A0A;
+  --surface-darker-light: #E5E5E5;
+  --border-color-dark: #2C2C2E;
+  --border-color-light: #C6C6C8;
   --element-bg-dark-rgb: 24, 24, 26;
   --element-bg-light-rgb: 230, 230, 235;
 }
@@ -60,6 +65,8 @@ body.light {
   --modal-bg: var(--modal-bg-light);
   --element-bg: var(--element-bg-light);
   --element-bg-rgb: var(--element-bg-light-rgb);
+  --surface-darker: var(--surface-darker-light);
+  --border-color: var(--border-color-light);
 }
 
 body:not(.light) {

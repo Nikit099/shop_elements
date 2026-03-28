@@ -59,7 +59,13 @@ function Cart() {
         { name: "receiver_name" },
         { name: "receiver_phone" },
     ]))
-    const { cartItems, setCartItems, sendMessage, message, setMessage, businessId, businessGifts } = useMainContext();
+    const { cartItems, setCartItems, sendMessage, message, setMessage, businessId, businessGifts, theme } = useMainContext();
+  const textPrimary = theme === "Dark" ? "#FFFFFF" : "#000000";
+  const textSecondary = theme === "Dark" ? "#8F8E93" : "#8E8E93";
+  const textTertiary = theme === "Dark" ? "#bbb" : "#666";
+  const elementBg = theme === "Dark" ? "rgb(24, 24, 26)" : "rgb(230, 230, 235)";
+  const surface = theme === "Dark" ? "#1C1C1E" : "#F2F2F7";
+  const borderColor = theme === "Dark" ? "#2C2C2E" : "#C6C6C8";
     const [ inputs, setInputs ] = useState({
         "delivery": {
             value: "Курьером",
@@ -333,8 +339,8 @@ function Cart() {
     if (cartItems.length > 0) {
         return (
             <div className="view">
-                <div style={{borderBottom: "0.5px solid #18181A", marginLeft: -15, width: "100vw"}}>
-                    <div style={{padding: "0 15px", color: '#18181A'}}>
+                <div style={{borderBottom: `0.5px solid ${borderColor}`, marginLeft: -15, width: "100vw"}}>
+                    <div style={{padding: "0 15px", color: textTertiary}}>
                         <Title text="Информация о вашем заказе" />
                     </div>
                 </div>

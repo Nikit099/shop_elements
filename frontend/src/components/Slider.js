@@ -57,26 +57,98 @@ function Slider({ images, imagesDivRef, setActiveImage, canAdd, activeImage, set
   }, [images]);
 
   const handleImageUpload = (e) => {
-    var files;
-    var photos_length;
+    const files = Array.from(e.target.files).slice(0, maxImagesCount - images.length);
+    
+    if (files.length === 0) {
+      return;
+    }
 
-    files = Array.from(e.target.files).slice(0, maxImagesCount - images.length);
-    photos_length = images.length;
-
-    let index = 0;
-
+    // Валидация файлов
+    const validFiles = [];
+    const invalidFiles = [];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    
     files.forEach(file => {
-      const reader = new FileReader();
+      // Проверка формата
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      
+      if (!validImageTypes.includes(file.type)) {
+        invalidFiles.push({ file, reason: 'Неверный формат файла. Допустимы: JPG, PNG, WebP, GIF' });
+        return;
+      }
+      
+      // Проверка размера
+      if (file.size > maxFileSize) {
+        invalidFiles.push({ file, reason: `Файл слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум: 10MB` });
+        return;
+      }
+      
+      validFiles.push(file);
+    });
+    
+    // Показываем ошибки для невалидных файлов
+    if (invalidFiles.length > 0) {
+      const errorMessages = invalidFiles.map(f => f.reason).join(', ');
+      setPhotosError(`Ошибка загрузки: ${errorMessages}`);
+      return;
+    }
+    
+    if (validFiles.length === 0) {
+      return;
+    }
 
-      reader.onload = (e) => {
-        setImages((prevImages) => [...prevImages, { file: e.target.result }]);
-        index += 1;
-      };
-
-      reader.readAsDataURL(file);
+    // Создаем промисы для каждой загрузки файла
+    const loadPromises = validFiles.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+          resolve({ file: e.target.result, name: file.name, size: file.size, type: file.type });
+        };
+        
+        reader.onerror = () => {
+          resolve(null); // Возвращаем null при ошибке
+        };
+        
+        reader.readAsDataURL(file);
+      });
     });
 
-    setPhotosError(null);
+    // Ожидаем завершения всех загрузок
+    Promise.all(loadPromises).then(results => {
+      const validResults = results.filter(result => result !== null);
+      
+      // Добавляем уникальный идентификатор для каждого изображения
+      const newImages = validResults.map(result => ({
+        ...result,
+        id: Date.now() + Math.random().toString(36).substr(2, 9) // уникальный ID
+      }));
+      
+      // Добавляем только новые изображения, проверяя на дубликаты по размеру и имени
+      setImages((prevImages) => {
+        const currentImageKeys = new Set(
+          prevImages.map(img => `${img.name || ''}-${img.size || 0}`)
+        );
+        
+        const filteredNewImages = newImages.filter(newImg => 
+          !currentImageKeys.has(`${newImg.name || ''}-${newImg.size || 0}`)
+        );
+        
+        return [...prevImages, ...filteredNewImages];
+      });
+      
+      setPhotosError(null);
+      
+      // Прокручиваем к последнему добавленному изображению
+      if (imagesDivRef.current && validResults.length > 0) {
+        setTimeout(() => {
+          imagesDivRef.current.scrollLeft = imagesDivRef.current.scrollWidth;
+        }, 100);
+      }
+    }).catch(error => {
+      console.error('Error loading images:', error);
+      setPhotosError('Ошибка при загрузке изображений');
+    });
   };
 
   const handleRemoveImage = () => {

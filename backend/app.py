@@ -9,7 +9,7 @@ from functools import wraps
 from flask_socketio import SocketIO, emit, disconnect
 from flask_cors import CORS
 # from flask_jwt_extended import JWTManager, jwt_required, create_access_token, create_refresh_token, get_jwt_identity
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -511,6 +511,9 @@ def create_shop_owner(telegram_id: int, shop_id: str):
 def compress_image_to_bytes(image_data, max_size, quality):
     """Конвертирует любое изображение в WebP и сжимает"""
     image = Image.open(BytesIO(image_data))
+    
+    # Исправляем ориентацию изображения на основе EXIF данных
+    image = ImageOps.exif_transpose(image)
     
     # Сохраняем прозрачность для PNG
     if image.mode in ("RGBA", "LA") or (image.mode == "P" and 'transparency' in image.info):

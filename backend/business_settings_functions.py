@@ -4,7 +4,7 @@ import os
 import json
 import base64
 import uuid
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
 from datetime import datetime
 
@@ -103,6 +103,9 @@ def upload_business_logo(business_id, image_data):
         # Сжимаем изображение
         image = Image.open(BytesIO(image_data_binary))
         
+        # Исправляем ориентацию изображения на основе EXIF данных
+        image = ImageOps.exif_transpose(image)
+        
         if image.mode in ("RGBA", "P"):
             image = image.convert("RGB")
         
@@ -136,6 +139,9 @@ def upload_business_logo(business_id, image_data):
 def compress_image_to_bytes(image_data, max_size, quality):
     """Конвертирует любое изображение в WebP и сжимает"""
     image = Image.open(BytesIO(image_data))
+    
+    # Исправляем ориентацию изображения на основе EXIF данных
+    image = ImageOps.exif_transpose(image)
     
     if image.mode in ("RGBA", "P"):
         image = image.convert("RGB")

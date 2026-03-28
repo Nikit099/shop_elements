@@ -1,9 +1,21 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSpringRef, animated, useSpring } from '@react-spring/web';
 import Button from './Button';
+import { useMainContext } from '../context';
 
 function Contact() {
-  const [ isOpen, setIsOpen ] = useState(false);
+  const { businessSettings, businessSettingsLoaded, theme } = useMainContext();
+  
+  // CSS переменные для темы (аналогично Post.js)
+  const textPrimary = theme === "Dark" ? "#FFFFFF" : "#000000";
+  const textSecondary = theme === "Dark" ? "#8F8E93" : "#8E8E93";
+  const elementBg = theme === "Dark" ? "rgb(24, 24, 26)" : "rgb(230, 230, 235)";
+  const modalBg = theme === "Dark" 
+    ? "linear-gradient(to top, rgba(0, 0, 0, 1) 50%, rgba(26, 24, 24, 1) 100%)" 
+    : "linear-gradient(to top, rgba(255, 255, 255, 1) 50%, rgba(245, 245, 247, 1) 100%)";
+  const surface = theme === "Dark" ? "#1C1C1E" : "#F2F2F7";
+  const borderColor = theme === "Dark" ? "#2C2C2E" : "#C6C6C8";
+  const [isOpen, setIsOpen] = useState(false);
   const api = useSpringRef();
   const api2 = useSpringRef();
   const modalApi = useSpringRef();
@@ -77,33 +89,50 @@ function Contact() {
       }, 100)
     }
   }
+  // Проверяем наличие контактных данных в businessSettings
+  const hasPhone = businessSettings && businessSettings.phone_number && businessSettings.phone_number.trim() !== '';
+  const hasTelegram = businessSettings && businessSettings.telegram_url && businessSettings.telegram_url.trim() !== '';
+  const hasWhatsApp = businessSettings && businessSettings.whatsapp_url && businessSettings.whatsapp_url.trim() !== '';
+  const hasWriteContact = hasTelegram || hasWhatsApp;
+  
+  // Если нет контактных данных, не показываем компонент
+  if (!hasPhone && !hasWriteContact) {
+    return null;
+  }
+
   return (
     <>
         <div style={{padding: "0 15px", display: "flex", gap: 8, width: "100%", boxSizing: "border-box"}}>
-          <animated.div style={{width: "100%", ...props}} onClick={() => toggle(0)}>
-            <Button text={"Позвонить"} style={{
-              fontWeight: 500, 
-              fontSize: 16,
-              borderRadius: 12,
-              height: 44,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#323234",
-              ...props}} />
-          </animated.div>
-          <animated.div style={{width: "100%", ...props2}} onClick={() => toggle(1)}>
-            <Button text={"Написать"} style={{
-              fontWeight: 500, 
-              fontSize: 16,
-              borderRadius: 11,
-              height: 44,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#323234",
-              ...props2}} />
-          </animated.div>
+          {hasPhone && (
+            <animated.div style={{width: "100%", ...props}} onClick={() => toggle(0)}>
+              <Button text={"Позвонить"} style={{
+                fontWeight: 500, 
+                fontSize: 16,
+                borderRadius: 12,
+                height: 44,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: elementBg,
+                color: textPrimary,
+                ...props}} />
+            </animated.div>
+          )}
+          {hasWriteContact && (
+            <animated.div style={{width: "100%", ...props2}} onClick={() => toggle(1)}>
+              <Button text={"Написать"} style={{
+                fontWeight: 500, 
+                fontSize: 16,
+                borderRadius: 11,
+                height: 44,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: elementBg,
+                color: textPrimary,
+                ...props2}} />
+            </animated.div>
+          )}
         </div>
       {isOpen &&
         <animated.div style={{
@@ -120,7 +149,7 @@ function Contact() {
             overflowY: "auto",
             overflowX: "hidden",
           }}>
-                <animated.div style={{background: "linear-gradient(to top, rgba(0, 0, 0, 1) 50%, rgba(26, 24, 24, 1) 100%)", 
+                <animated.div style={{background: modalBg, 
                           width: "100vw",
                           minHeight: "150px",
                                   borderTopLeftRadius: 25, 
@@ -144,28 +173,29 @@ function Contact() {
               </div>
               {type === 1 ?
               <div style={{paddingTop: 10}}>
-                <a href="https://t.me/LIGHTbusinessRose" target="_blank" rel="noopener noreferrer" style={{textDecoration: "none"}}>
-                  <div style={{padding: "20px", fontSize: 16, fontWeight: 300, borderBottom: "0.5px solid rgb(24, 24, 26)", color: "#fff"}}>
-                    Telegram
-                  </div>
-                </a>
-                <a href="https://wa.me/79933074710" target="_blank" rel="noopener noreferrer" style={{textDecoration: "none"}}>
-                  <div style={{padding: "20px", fontSize: 16, fontWeight: 300, color: "#fff"}}>
-                    WhatsApp
-                  </div>
-                </a>
+                {hasTelegram && (
+                  <a href={businessSettings.telegram_url} target="_blank" rel="noopener noreferrer" style={{textDecoration: "none"}}>
+                    <div style={{padding: "20px", fontSize: 16, fontWeight: 300, borderBottom: hasWhatsApp ? `0.5px solid ${borderColor}` : "none", color: textPrimary}}>
+                      Telegram
+                    </div>
+                  </a>
+                )}
+                {hasWhatsApp && (
+                  <a href={businessSettings.whatsapp_url} target="_blank" rel="noopener noreferrer" style={{textDecoration: "none"}}>
+                    <div style={{padding: "20px", fontSize: 16, fontWeight: 300, color: textPrimary}}>
+                      WhatsApp
+                    </div>
+                  </a>
+                )}
               </div> :
               <div style={{paddingTop: 10}}>
-                <a href="tel:+79933074710" onСlick="window.open('tel:+79933074710');" style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div style={{padding: "20px", fontSize: 16, fontWeight: 300, borderBottom: "0.5px solid rgb(24, 24, 26)", color: "#fff"}}>
-                    +7 993 30 74 710 - Сочи
-                  </div>
-                </a>
-                <a href="tel:+79911888886" onСlick="window.open('tel:+79911888886');" style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div style={{padding: "20px", fontSize: 16, fontWeight: 300, color: "#fff"}}>
-                    +7 991 18 88 886 - Краснодар
-                  </div>
-                </a>
+                {hasPhone && (
+                  <a href={`tel:${businessSettings.phone_number}`} onClick={(e) => { e.preventDefault(); window.open(`tel:${businessSettings.phone_number}`); }} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div style={{padding: "20px", fontSize: 16, fontWeight: 300, borderBottom: `0.5px solid ${borderColor}`, color: textPrimary}}>
+                      {businessSettings.phone_number}
+                    </div>
+                  </a>
+                )}
               </div>}
             </animated.div>
           </div>

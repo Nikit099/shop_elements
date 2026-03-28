@@ -3,25 +3,7 @@ import './styles/FixedButton.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useMainContext } from '../context';
-
-const useDoubleClick = (callback, onSingleClick = () => {}, timeout = 150) => {
-  const [clickCount, setClickCount] = useState(0);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (clickCount === 2) {
-        callback();
-      } else if (clickCount === 1) {
-        onSingleClick();
-      }
-      setClickCount(0);
-    }, timeout);
-
-    return () => clearTimeout(timer);
-  }, [clickCount, callback, onSingleClick, timeout]);
-
-  return () => setClickCount(prev => prev + 1);
-};
+import QRModal from './QRModal';
 
 const FixedButton = (props) => {
   let location = useLocation();
@@ -29,11 +11,11 @@ const FixedButton = (props) => {
   const [ isProButtonVisible, setIsProButtonVisible ] = useState(true);
   const [ canGoBack, setCanGoBack ] = useState(false);
   const [ canScrollUp, setCanScrollUp ] = useState(false);
-  const { accessToken, refreshToken, handleClickBackButton, cartItems, businessId, isBusinessOwner } = useMainContext();
+  const [ showQRModal, setShowQRModal ] = useState(false);
+  const { handleClickBackButton, cartItems, businessId, isBusinessOwner } = useMainContext();
 
   const scrollUp = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    console.log(accessToken && refreshToken)
   }
 
   const goBack = () => {
@@ -41,10 +23,6 @@ const FixedButton = (props) => {
     // но лучше всегда контролировать путь через businessId
       navigate(`/${businessId}`);
   };
-
-  const openButtons = () => {
-    setIsProButtonVisible(prev => !prev);
-  }
 
   useEffect(() => {
     const updateCanGoBack = () => {
@@ -72,6 +50,13 @@ const FixedButton = (props) => {
 
   return (
     <div className={(props.upper && 'upper') || (props.send && 'send')}>
+      {/* Кнопка QR-кодов (только для владельца) */}
+      {isBusinessOwner && (
+        <div className={`fixed-button qr ${isProButtonVisible ? 'visible' : ''}`} onClick={() => setShowQRModal(true)}>
+          <img src={require("./images/qr.svg").default} className="" alt="qr" />
+        </div>
+      )}
+      
       {/* Кнопка настроек компании (только для владельца) */}
       {isBusinessOwner && (
         <div className={`fixed-button settings ${isProButtonVisible ? 'visible' : ''}`} onClick={() => navigate(`/${businessId}/settings`)}>
@@ -118,6 +103,9 @@ const FixedButton = (props) => {
       : <img src={require("./images/close.svg").default} alt="arrow" style={{width: "100%"}}/> }
   </div>
 }
+
+      {/* Модальное окно QR-кодов */}
+      <QRModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} />
     </div>
   );
 };

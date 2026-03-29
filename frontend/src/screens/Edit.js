@@ -25,7 +25,7 @@ const validationSchema = Yup.object().shape({
 function Edit() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading } = useMainContext();
+  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading, forceReloadBusinessCards } = useMainContext();
   const imagesDivRef = useRef();
   const [images, setImages] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
@@ -141,11 +141,15 @@ function Edit() {
     if (msg[0] === "cards") {
       if (msg[1] === "updated") {
         setCardId(msg[2]);
+        // Принудительно перезагружаем список карточек после обновления
+        forceReloadBusinessCards();
       } else if (msg[1] === 'filter') {
         if (msg[2] && msg[2][0]) {
           setCard(msg[2][0]);
         }
       } else if (msg[1] === 'deleted') {
+        // Принудительно перезагружаем список карточек после удаления
+        forceReloadBusinessCards();
         navigate(`/${businessId}`);
       }
     } else if (msg[0] === "images") {
@@ -167,9 +171,11 @@ function Edit() {
       sendMessage(JSON.stringify(["images", "add", cardId, indexOfLoadedImage.current + 1, images[indexOfLoadedImage.current + 1].file]));
     } else if (cardId) {
       setSaving(false);
+      // Принудительно перезагружаем список карточек после обновления
+      forceReloadBusinessCards();
       navigate(`/${businessId}/search?card_id=${cardId}`, { replace: true });
     }
-  }, [cardId, images, businessId, navigate, sendMessage]);
+  }, [cardId, images, businessId, navigate, sendMessage, forceReloadBusinessCards]);
 
   // Инициализация данных карточки
   useEffect(() => {

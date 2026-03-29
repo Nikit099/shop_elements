@@ -15,7 +15,8 @@ function BusinessSettings() {
     setMessage,
     businessSettings,
     businessSettingsLoaded,
-    loadBusinessSettings
+    loadBusinessSettings,
+    forceReloadBusinessSettings
   } = useMainContext();
   
   const [loading, setLoading] = useState(true);
@@ -86,8 +87,8 @@ function BusinessSettings() {
       if (message[1] === 'update') {
         setSaving(false);
         alert('Настройки успешно сохранены!');
-        // Перезагружаем настройки через контекст
-        loadBusinessSettings(businessId);
+        // Принудительно перезагружаем настройки через контекст
+        forceReloadBusinessSettings();
         // Не навигация сразу, чтобы дать время на перезагрузку данных
         setTimeout(() => {
           navigate(`/${businessId}`);
@@ -96,13 +97,13 @@ function BusinessSettings() {
         const logoUrl = message[2];
         setFormData(prev => ({ ...prev, logo_url: logoUrl }));
         setLogoPreview(logoUrl);
-        // После загрузки логотипа обновляем данные через контекст
-        loadBusinessSettings(businessId);
+        // После загрузки логотипа принудительно обновляем данные через контекст
+        forceReloadBusinessSettings();
       }
     }
 
     setMessage(null);
-  }, [message]);
+  }, [message, businessId, navigate, forceReloadBusinessSettings]);
 
   // Дополнительный эффект для обработки загруженных через контекст настроек
   useEffect(() => {

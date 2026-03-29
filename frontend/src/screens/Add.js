@@ -25,7 +25,7 @@ const validationSchema = Yup.object().shape({
 
 function Add() {
   const navigate = useNavigate();
-  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading } = useMainContext();
+  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading, forceReloadBusinessCards } = useMainContext();
   const imagesDivRef = useRef();
   const [ images, setImages ] = useState([]);
   const [ activeImage, setActiveImage ] = useState(0);
@@ -161,9 +161,11 @@ function Add() {
       sendMessage(JSON.stringify(["images", "add", cardId, indexOfLoadedImage.current + 1, images[indexOfLoadedImage.current + 1].file, businessId]));
     } else if (cardId) {
       setSaving(false);
+      // Принудительно перезагружаем список карточек после создания новой
+      forceReloadBusinessCards();
       navigate(`/${businessId}/search?card_id=`  + cardId, { replace: true });
     }
-  }, [cardId, indexOfLoadedImage.current, images, businessId, navigate, sendMessage])
+  }, [cardId, indexOfLoadedImage.current, images, businessId, navigate, sendMessage, forceReloadBusinessCards])
   
   // Проверка прав доступа
   if (loading) return <div>Проверка прав доступа...</div>;

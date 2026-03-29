@@ -79,29 +79,19 @@ const SocketProvider = ({ children }) => {
     return savedShopInfo ? JSON.parse(savedShopInfo) : null;
   });
 
-  // Новые состояния для кэширования данных бизнеса
-  const [businessSettings, setBusinessSettings] = useState(() => {
-    if (businessId) {
-      const saved = localStorage.getItem(`businessSettings_${businessId}`);
-      return saved ? JSON.parse(saved) : null;
-    }
-    return null;
-  });
+  // Новые состояния для данных бизнеса (динамические, без localStorage кэширования)
+  const [businessSettings, setBusinessSettings] = useState(null);
+  const [businessCards, setBusinessCards] = useState([]);
   
-  const [businessCards, setBusinessCards] = useState(() => {
-    if (businessId) {
-      const saved = localStorage.getItem(`businessCards_${businessId}`);
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
-  
-  // Состояние для подарков (храним только в памяти, не в localStorage)
+  // Состояние для подарков (храним только в памяти)
   const [businessGifts, setBusinessGifts] = useState([]);
   const [businessGiftsLoaded, setBusinessGiftsLoaded] = useState(false);
   
+  // Флаги для отслеживания загрузки (используются только для внутренней логики)
   const [businessSettingsLoaded, setBusinessSettingsLoaded] = useState(false);
   const [businessCardsLoaded, setBusinessCardsLoaded] = useState(false);
+  const [forceReloadSettings, setForceReloadSettings] = useState(false);
+  const [forceReloadCards, setForceReloadCards] = useState(false);
 
   // Остальные состояния...
   const [socket, setSocket] = useState(null);
@@ -289,8 +279,8 @@ const SocketProvider = ({ children }) => {
   const loadBusinessSettings = (bId) => {
     if (!bId) return;
     
-    // Если уже загружены для этого бизнеса - не загружаем снова
-    if (businessSettings && businessSettings.business_id === bId && businessSettingsLoaded) {
+    // Если не требуется принудительная перезагрузка и уже загружены для этого бизнеса - не загружаем снова
+    if (!forceReloadSettings && businessSettings && businessSettings.business_id === bId && businessSettingsLoaded) {
       console.log("Business settings уже загружены для бизнеса:", bId);
       return;
     }
@@ -298,6 +288,7 @@ const SocketProvider = ({ children }) => {
     // Сбрасываем флаг загрузки и загружаем
     console.log("Загружаем business settings для бизнеса:", bId);
     setBusinessSettingsLoaded(false);
+    setForceReloadSettings(false); // Сбрасываем флаг принудительной перезагрузки
     sendMessage(JSON.stringify(["business_settings", "get", { business_id: bId }]));
   };
 
@@ -305,8 +296,8 @@ const SocketProvider = ({ children }) => {
   const loadBusinessCards = (bId, limit = 100) => {
     if (!bId) return;
     
-    // Если уже загружены для этого бизнеса - не загружаем снова
-    if (businessCards.length > 0 && businessCardsLoaded) {
+    // Если не требуется принудительная перезагрузка и уже загружены для этого бизнеса - не загружаем снова
+    if (!forceReloadCards && businessCards.length > 0 && businessCardsLoaded) {
       console.log("Business cards уже загружены для бизнеса:", bId, businessCards.length, "карточек");
       return;
     }
@@ -314,6 +305,7 @@ const SocketProvider = ({ children }) => {
     // Сбрасываем флаг загрузки и загружаем
     console.log("Загружаем business cards для бизнеса:", bId, "лимит:", limit);
     setBusinessCardsLoaded(false);
+    setForceReloadCards(false); // Сбрасываем флаг принудительной перезагрузки
     sendMessage(JSON.stringify(["cards", "filter", { business_id: bId }, limit]));
   };
 
@@ -331,6 +323,23 @@ const SocketProvider = ({ children }) => {
     console.log("Загружаем business gifts для бизнеса:", bId, "лимит:", limit);
     setBusinessGiftsLoaded(false);
     sendMessage(JSON.stringify(["cards", "filter", { business_id: bId, category: "Подарки" }, limit]));
+  };
+  
+  // Функции для принудительной перезагрузки данных
+  const forceReloadBusinessSettings = () => {
+    console.log("Принудительная перезагрузка бизнес-настроек для бизнеса:", businessId);
+    setForceReloadSettings(true);
+    if (businessId) {
+      loadBusinessSettings(businessId);
+    }
+  };
+  
+  const forceReloadBusinessCards = () => {
+    console.log("Принудительная перезагрузка карточек для бизнеса:", businessId);
+    setForceReloadCards(true);
+    if (businessId) {
+      loadBusinessCards(businessId, 100);
+    }
   };
 
   // Функция для очистки данных бизнеса
@@ -360,14 +369,12 @@ const SocketProvider = ({ children }) => {
         if (settings) {
           setBusinessSettings(settings);
           setBusinessSettingsLoaded(true);
-          // Сохраняем в localStorage для persistence
-          if (businessId) {
-            localStorage.setItem(`businessSettings_${businessId}`, JSON.stringify(settings));
-          }
+          // НЕ сохраняем в localStorage - используем динамический подход
           console.log("Business settings сохранены в контекст для бизнеса:", businessId);
         }
       } else if (message[1] === 'update') {
-        // После обновления настроек нужно перезагрузить данные
+        // После обновления настроек автоматически перезагружаем данные
+        // Это уже происходит в BusinessSettings.js, но на всякий случай оставляем
         if (businessId) {
           loadBusinessSettings(businessId);
         }
@@ -390,8 +397,7 @@ const SocketProvider = ({ children }) => {
         if (bId && cards && !isGiftRequest) {
           setBusinessCards(cards);
           setBusinessCardsLoaded(true);
-          // Сохраняем в localStorage для persistence
-          localStorage.setItem(`businessCards_${bId}`, JSON.stringify(cards));
+          // НЕ сохраняем в localStorage - используем динамический подход
           console.log("Business cards сохранены в контекст для бизнеса:", bId, cards.length, "карточек");
         } else if (isGiftRequest) {
           console.log("Запрос на подарки - сохраняем в businessGifts");
@@ -491,6 +497,9 @@ const SocketProvider = ({ children }) => {
       setBusinessSettings,
       setBusinessCards,
       clearBusinessData,
+      // Функции принудительной перезагрузки
+      forceReloadBusinessSettings,
+      forceReloadBusinessCards,
       // Новые значения для работы с подарками
       businessGifts,
       businessGiftsLoaded,

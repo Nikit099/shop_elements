@@ -141,7 +141,8 @@ function Main() {
             </div>
           )}
         </div>
-          <div style={{marginLeft: "auto", display: "flex", alignItems: "center", gap: 8}}>
+        {/* Тумблер на смену темы */}
+          {/* <div style={{marginLeft: "auto", display: "flex", alignItems: "center", gap: 8}}>
 
             <div style={{fontSize: 11, fontWeight: 300, color: theme === "Dark" ? "#dfdfdfff" : "#2d2d2dff"}}>{theme}</div>
             <div 
@@ -171,7 +172,7 @@ function Main() {
                 // transform: theme === "Dark" ? "translateX(0px)" : "translateX(0px)"
               }}></div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
       {/* <div className={styles.block}>

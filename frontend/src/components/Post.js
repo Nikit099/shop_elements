@@ -8,6 +8,8 @@ import Contact from './Contact';
 import { useMainContext } from '../context';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BottomSheet from './BottomSheet';
+
 import styles from './styles/Post.module.css';
 function multiplyPrice(priceString, multiplier) {
   // Удаляем все символы, кроме цифр и пробелов, из строки цены
@@ -24,6 +26,8 @@ function multiplyPrice(priceString, multiplier) {
 
 function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) {
   const navigate = useNavigate();
+const [isOpen, setIsOpen] = useState(false);
+
   const [ data, setData ] = useState(postData);
   const { sendMessage, message, setMessage, cartItems, setCartItems, account, theme, businessId, isBusinessOwner } = useMainContext();
   
@@ -349,7 +353,7 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
           </div>
         </animated.div>}
       {type === "block-small" &&
-        <animated.div style={{width: "calc(30vw - 20px)", position: "relative", height: "100%", zIndex: 1, ...props}}>
+         <animated.div style={{width: "calc(30vw - 20px)", position: "relative", height: "100%", zIndex: 1, ...props}}>
           <div ref={postDivRef} onClick={(e) => handleCart(e, 1)} style={{position: "relative", display: "flex", flexFlow: "column", rowGap: 10, height: "100%"}}>
             <div style={{flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: 9, height: "calc(30vw - 20px)"}}>
               <LazyLoadImage visibleByDefault={true} src={data.images[0]?.file} placeholderSrc={data.images[0]?.file_lazy} style={{width: "100%", height: "100%", objectFit: "cover"}} />
@@ -370,7 +374,8 @@ function Post({ postData, type, parent, basePathUrl, shouldOpenModal = false }) 
               <div style={{fontSize: 14, fontWeight: 300, color: "var(--text-secondary)"}}>{data.price}</div>
             </div>
           </div>
-        </animated.div>}
+        </animated.div>
+        }
       {type === "line" &&
         <div onClick={toggle}>
           <animated.div ref={postDivRef} style={{display: "flex", columnGap: 14, alignItems: "center", position: "relative", ...props}}>

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import Post from '../components/Post';
 import { useMainContext } from '../context';
-
+import BottomSheet from '../components/BottomSheet';
 
 function Main() {
   const { 
@@ -20,7 +20,7 @@ function Main() {
     loadBusinessSettings,
     loadBusinessCards
   } = useMainContext();
-
+const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const cardId = params.get('card_id');
@@ -105,7 +105,7 @@ function Main() {
       
       // Обработка загрузки конкретной карточки по card_id
       if (message[0] === 'cards' && message[1] === 'filter') {
-        // Контекст уже обрабатывает эти сообщения для сохранения businessCards
+        // Контекст уже обрабатывает эти сообщения для стохранения businessCards
       }
       setMessage(null);
     }
@@ -238,10 +238,50 @@ function Main() {
                 {[0, 1].includes(index) &&
                 <Post postData={post} type="old-normal" basePathUrl="/" />}
                 {![0, 1, 2].includes(index) &&
-                <Post postData={post} type="old-small" basePathUrl="/" />}
+                <Post  postData={post} type="old-small" basePathUrl="/" />}
               </div>
             ))}
+            <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        
+              Все содержимое
+        <button
+          onClick={() => setIsOpen(false)}
+          style={{
+            marginTop: '32px',
+            width: '100%',
+            padding: '16px',
+            backgroundColor: '#2563eb',
+            color: '#ffffff',
+            borderRadius: '16px',
+            fontSize: '17px',
+            fontWeight: '600',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Закрыть
+        </button>
+      </BottomSheet>
+         <button
+        onClick={() => setIsOpen(true)}
+        style={{
+          paddingLeft: '24px',
+          paddingRight: '24px',
+          paddingTop: '12px',
+          paddingBottom: '12px',
+          backgroundColor: '#2563eb',
+          color: '#ffffff',
+          borderRadius: '16px',
+          fontSize: '16px',
+          fontWeight: '600',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        Тестова кнопочка
+      </button>
           </>
+          
           :
           <div style={{width: "100%", height: "50vw", display: "flex", alignItems: "center", justifyContent: "center"}}>
             <div style={{fontSize: 16, fontWeight: 300, color: theme === "Dark" ? "#dfdfdfff" : "#2d2d2dff"}}>Товар отсутствует</div>

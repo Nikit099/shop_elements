@@ -19,8 +19,9 @@ typing_extensions==4.12.2
 yarl==1.9.4
 aiogram>=3.13.0
 python-dotenv>=1.0.0
-supabase==2.3.0
+supabase==2.27.2
 httpx==0.24.1
+websockets>=12.0
 
 
 

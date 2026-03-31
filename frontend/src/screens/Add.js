@@ -30,8 +30,10 @@ function Add() {
   const [ images, setImages ] = useState([]);
   const [ activeImage, setActiveImage ] = useState(0);
   const [ photosError, setPhotosError ] = useState(null);
-  const indexOfLoadedImage = useRef(-1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(-1);
   const [ cardId, setCardId ] = useState(null);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const isSendingRequest = useRef(false);
   const [ inputs, setInputs ] = useState({
     "category": {
       value: null,
@@ -145,27 +147,57 @@ function Add() {
     if (message && window.location.pathname === `/${businessId}/add`) {
       if (message[0] === "cards") {
         if (message[1] === "created") {
+          console.log('DEBUG: Card created with ID:', message[2]);
           setCardId(message[2]);
+          // Начинаем загрузку изображений
+          setIsUploadingImages(true);
+          setCurrentImageIndex(-1); // Начинаем с -1
         }
       } else if (message[0] === "images") {
         if (message[1] === "added") {
-          indexOfLoadedImage.current = message[2];
+          console.log('DEBUG: Image added with index:', message[2]);
+          const addedIndex = message[2];
+          setCurrentImageIndex(addedIndex);
+          // Сбрасываем флаг отправки запроса
+          isSendingRequest.current = false;
+        }
+      } else if (message[0] === "error") {
+        // Если произошла ошибка при загрузке изображения, сбрасываем флаг
+        if (message[1] === "image_upload_failed") {
+          console.log('DEBUG: Image upload failed, resetting sending flag');
+          isSendingRequest.current = false;
         }
       }
       setMessage(null);
     };
   }, [message, businessId, setMessage]);
   
+  // Эффект для загрузки следующего изображения
   useEffect(() => {
-    if (cardId && indexOfLoadedImage.current + 1 <= images.length && images[indexOfLoadedImage.current + 1]) {
-      sendMessage(JSON.stringify(["images", "add", cardId, indexOfLoadedImage.current + 1, images[indexOfLoadedImage.current + 1].file, businessId]));
-    } else if (cardId) {
+    // Если нет карточки или не идет загрузка изображений, выходим
+    if (!cardId || !isUploadingImages) return;
+    
+    // Если все изображения загружены
+    if (currentImageIndex + 1 >= images.length) {
+      console.log('DEBUG: All images uploaded, finishing...');
+      setIsUploadingImages(false);
       setSaving(false);
-      // Принудительно перезагружаем список карточек после создания новой
       forceReloadBusinessCards();
-      navigate(`/${businessId}/search?card_id=`  + cardId, { replace: true });
+      navigate(`/${businessId}/search?card_id=${cardId}`, { replace: true });
+      return;
     }
-  }, [cardId, indexOfLoadedImage.current, images, businessId, navigate, sendMessage, forceReloadBusinessCards])
+    
+    // Если уже идет отправка запроса, выходим
+    if (isSendingRequest.current) return;
+    
+    const nextIndex = currentImageIndex + 1;
+    console.log('DEBUG: Starting upload for image', nextIndex, 'of', images.length);
+    
+    // Отправляем запрос на загрузку изображения
+    isSendingRequest.current = true;
+    sendMessage(JSON.stringify(["images", "add", cardId, nextIndex, images[nextIndex].file, businessId]));
+    
+  }, [cardId, currentImageIndex, images, isUploadingImages, businessId, navigate, sendMessage, forceReloadBusinessCards]);
   
   // Проверка прав доступа
   if (loading) return <div>Проверка прав доступа...</div>;

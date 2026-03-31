@@ -802,6 +802,49 @@ def handle_message(message):
                         pass
                 
                 if business_id and "," in image_data:
+                    # АТОМАРНАЯ ПРОВЕРКА: Сначала пытаемся вставить запись с unique constraint
+                    # или используем более строгую проверку с блокировкой
+                    try:
+                        # Проверяем, не существует ли уже изображение с таким индексом для этой карточки
+                        # Делаем это в транзакционном стиле
+                        existing_image = supabase.table('images') \
+                            .select('*') \
+                            .eq('card_id', card_id) \
+                            .eq('image_index', image_index) \
+                            .execute()
+                        
+                        if existing_image.data and len(existing_image.data) > 0:
+                            print(f"WARNING: Image with index {image_index} already exists for card {card_id}, skipping upload")
+                            # Отправляем сообщение, что изображение уже добавлено
+                            emit("message", json.dumps(["images", "added", image_index, existing_image.data[0]['file']]))
+                            return
+                    except Exception as check_error:
+                        print(f"WARNING: Error checking existing image: {check_error}")
+                        # Продолжаем загрузку, если не удалось проверить
+                    
+                    # ДОБАВЛЯЕМ ДОПОЛНИТЕЛЬНУЮ ПРОВЕРКУ: проверим, не идет ли уже загрузка этого изображения
+                    # Создаем уникальный идентификатор для текущей операции загрузки
+                    upload_key = f"upload_{card_id}_{image_index}"
+                    # В реальном приложении здесь можно использовать redis или другой кэш
+                    # Для простоты добавим задержку перед повторной проверкой
+                    import time
+                    time.sleep(0.1)  # Небольшая задержка для предотвращения race condition
+                    
+                    # Повторная проверка после задержки
+                    try:
+                        existing_image = supabase.table('images') \
+                            .select('*') \
+                            .eq('card_id', card_id) \
+                            .eq('image_index', image_index) \
+                            .execute()
+                        
+                        if existing_image.data and len(existing_image.data) > 0:
+                            print(f"WARNING: Image with index {image_index} already exists for card {card_id} (double-check), skipping upload")
+                            emit("message", json.dumps(["images", "added", image_index, existing_image.data[0]['file']]))
+                            return
+                    except Exception as double_check_error:
+                        print(f"WARNING: Error in double-check: {double_check_error}")
+                    
                     # Декодируем base64
                     image_data_binary = base64.b64decode(image_data.split(',')[-1])
                     
@@ -841,6 +884,7 @@ def handle_message(message):
                         }
                         
                         supabase.table('images').insert(image_record).execute()
+                        print(f"DEBUG: Image uploaded for card {card_id}, index {image_index}")
                         emit("message", json.dumps(["images", "added", image_index, public_url]))
                     else:
                         emit("message", json.dumps(["error", "image_upload_failed"]))

@@ -30,11 +30,13 @@ function Edit() {
   const [images, setImages] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
   const [photosError, setPhotosError] = useState(null);
-  const indexOfLoadedImage = useRef(-1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(-1);
   const [cardId, setCardId] = useState(null);
   const [card, setCard] = useState(null);
   const [saving, setSaving] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const isSendingRequest = useRef(false);
   
   const [inputs, setInputs] = useState({
     "category": {
@@ -140,7 +142,11 @@ function Edit() {
     
     if (msg[0] === "cards") {
       if (msg[1] === "updated") {
+        console.log('DEBUG: Card updated with ID:', msg[2]);
         setCardId(msg[2]);
+        // Сбрасываем индекс загруженных изображений при обновлении карточки
+        setCurrentImageIndex(-1);
+        setIsUploadingImages(true);
         // Принудительно перезагружаем список карточек после обновления
         forceReloadBusinessCards();
       } else if (msg[1] === 'filter') {
@@ -154,28 +160,53 @@ function Edit() {
       }
     } else if (msg[0] === "images") {
       if (msg[1] === "added") {
-        indexOfLoadedImage.current = msg[2];
+        console.log('DEBUG: Image added with index:', msg[2]);
+        setCurrentImageIndex(msg[2]);
+        // Сбрасываем флаг отправки запроса после успешной загрузки
+        isSendingRequest.current = false;
+      }
+    } else if (msg[0] === "error") {
+      // Если произошла ошибка при загрузке изображения, сбрасываем флаг
+      if (msg[1] === "image_upload_failed") {
+        console.log('DEBUG: Image upload failed, resetting sending flag');
+        isSendingRequest.current = false;
       }
     }
     
     // Очищаем сообщение только если оно было обработано
     if ((msg[0] === "cards" && (msg[1] === "updated" || msg[1] === 'filter' || msg[1] === 'deleted')) || 
-        (msg[0] === "images" && msg[1] === "added")) {
+        (msg[0] === "images" && msg[1] === "added") ||
+        (msg[0] === "error" && msg[1] === "image_upload_failed")) {
       setMessage(null);
     }
-  }, [message, businessId, id, navigate, setMessage]);
+  }, [message, businessId, id, navigate, setMessage, forceReloadBusinessCards]);
 
-  // Загрузка изображений после создания/обновления карточки
+  // Эффект для загрузки следующего изображения
   useEffect(() => {
-    if (cardId && indexOfLoadedImage.current + 1 <= images.length && images[indexOfLoadedImage.current + 1]) {
-      sendMessage(JSON.stringify(["images", "add", cardId, indexOfLoadedImage.current + 1, images[indexOfLoadedImage.current + 1].file]));
-    } else if (cardId) {
+    // Если нет карточки или не идет загрузка изображений, выходим
+    if (!cardId || !isUploadingImages) return;
+    
+    // Если все изображения загружены
+    if (currentImageIndex + 1 >= images.length) {
+      console.log('DEBUG: All images uploaded, finishing...');
+      setIsUploadingImages(false);
       setSaving(false);
-      // Принудительно перезагружаем список карточек после обновления
       forceReloadBusinessCards();
       navigate(`/${businessId}/search?card_id=${cardId}`, { replace: true });
+      return;
     }
-  }, [cardId, images, businessId, navigate, sendMessage, forceReloadBusinessCards]);
+    
+    // Если уже идет отправка запроса, выходим
+    if (isSendingRequest.current) return;
+    
+    const nextIndex = currentImageIndex + 1;
+    console.log('DEBUG: Starting upload for image', nextIndex, 'of', images.length);
+    
+    // Отправляем запрос на загрузку изображения
+    isSendingRequest.current = true;
+    sendMessage(JSON.stringify(["images", "add", cardId, nextIndex, images[nextIndex].file, businessId]));
+    
+  }, [cardId, currentImageIndex, images, isUploadingImages, businessId, navigate, sendMessage, forceReloadBusinessCards]);
 
   // Инициализация данных карточки
   useEffect(() => {

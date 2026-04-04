@@ -407,6 +407,11 @@ const SocketProvider = ({ children }) => {
           setBusinessCardsLoaded(true);
           // НЕ сохраняем в localStorage - используем динамический подход
           console.log("Business cards сохранены в контекст для бизнеса:", bId, cards.length, "карточек");
+          
+          // Логируем первые несколько карточек для отладки
+          if (cards.length > 0) {
+            console.log("Первые 3 карточки для бизнеса", bId, ":", cards.slice(0, 3).map(c => ({id: c.id, _id: c._id, title: c.title})));
+          }
         } else if (isGiftRequest) {
           console.log("Запрос на подарки - сохраняем в businessGifts");
           // Сохраняем подарки в отдельное состояние
@@ -415,6 +420,8 @@ const SocketProvider = ({ children }) => {
             setBusinessGiftsLoaded(true);
             console.log("Business gifts сохранены в контекст для бизнеса:", bId, cards.length, "подарков");
           }
+        } else if (isSingleCardRequest) {
+          console.log("Запрос одной карточки (фильтр:", filters, "), НЕ обновляем businessCards. Карточек в ответе:", cards?.length || 0);
         }
         // Для запроса одной карточки (isSingleCardRequest) ничего не делаем - не обновляем businessCards
       }

@@ -25,7 +25,7 @@ const validationSchema = Yup.object().shape({
 function Edit() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading, forceReloadBusinessCards, businessCards } = useMainContext();
+  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading, forceReloadBusinessCards, businessCards, businessCardsLoaded } = useMainContext();
   const imagesDivRef = useRef();
   const [images, setImages] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
@@ -126,18 +126,29 @@ function Edit() {
   useEffect(() => {
     window.scrollTo({top: 0});
     if (id && !initialized) {
-      // Сначала ищем карточку в локальном хранилище
-      const foundCard = businessCards.find(card => card._id === id || card.id === id);
+      // Если карточки еще не загружены в контекст, ждем их загрузки
+      if (!businessCardsLoaded) {
+        console.log('Edit: Карточки еще не загружены, ждем...');
+        return;
+      }
+      
+      // Карточки загружены, ищем нужную карточку в локальном хранилище
+      console.log('Edit: Ищем карточку с ID:', id, 'в businessCards (всего карточек:', businessCards.length, ')');
+      const foundCard = businessCards.find(card => 
+        String(card._id) === String(id) || String(card.id) === String(id)
+      );
       if (foundCard) {
+        console.log('Edit: Карточка найдена локально, ID:', id, 'данные:', foundCard);
         setCard(foundCard);
         setInitialized(true);
       } else {
+        console.log('Edit: Карточка не найдена локально, запрашиваем с сервера, ID:', id);
         // Только если не найдена локально - запрашиваем с сервера
         sendMessage(JSON.stringify(["cards", "filter", {"_id": id}, 1]));
         setInitialized(true);
       }
     }
-  }, [id, sendMessage, initialized, businessCards]);
+  }, [id, sendMessage, initialized, businessCards, businessCardsLoaded]);
 
   // Эффект для обновления карточки, если она загрузится в businessCards позже
   useEffect(() => {

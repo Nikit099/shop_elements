@@ -926,6 +926,7 @@ def handle_message(message):
                     'time_of_post': order_data.get('time_of_post'),
                     'request_address': bool(order_data.get('request_address')), 
                     'request_datetime':  bool(order_data.get('request_datetime')),
+                    'business_id': order_data.get('business_id'),
                     'items': json.dumps(order_data.get('items', []))
                 }
                 print(data)

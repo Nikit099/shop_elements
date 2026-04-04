@@ -25,7 +25,7 @@ const validationSchema = Yup.object().shape({
 function Edit() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading, forceReloadBusinessCards } = useMainContext();
+  const { sendMessage, message, setMessage, account, businessId, isBusinessOwner, loading, forceReloadBusinessCards, businessCards } = useMainContext();
   const imagesDivRef = useRef();
   const [images, setImages] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
@@ -126,10 +126,28 @@ function Edit() {
   useEffect(() => {
     window.scrollTo({top: 0});
     if (id && !initialized) {
-      sendMessage(JSON.stringify(["cards", "filter", {"_id": id}, 1]));
-      setInitialized(true);
+      // Сначала ищем карточку в локальном хранилище
+      const foundCard = businessCards.find(card => card._id === id || card.id === id);
+      if (foundCard) {
+        setCard(foundCard);
+        setInitialized(true);
+      } else {
+        // Только если не найдена локально - запрашиваем с сервера
+        sendMessage(JSON.stringify(["cards", "filter", {"_id": id}, 1]));
+        setInitialized(true);
+      }
     }
-  }, [id, sendMessage, initialized]);
+  }, [id, sendMessage, initialized, businessCards]);
+
+  // Эффект для обновления карточки, если она загрузится в businessCards позже
+  useEffect(() => {
+    if (id && !card) {
+      const foundCard = businessCards.find(c => c._id === id || c.id === id);
+      if (foundCard) {
+        setCard(foundCard);
+      }
+    }
+  }, [businessCards, id, card]);
 
   // Обработка сообщений от сервера
   useEffect(() => {

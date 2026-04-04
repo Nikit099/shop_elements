@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Post from '../components/Post';
 import { useMainContext } from '../context';
 import BottomSheet from '../components/BottomSheet';
-
+import CircularMenu from '../components/CircularMenu';
 function Main() {
   const { 
     sendMessage, 
@@ -133,7 +133,7 @@ const [isOpen, setIsOpen] = useState(false);
         </div>
         <div style={{marginBottom: 4}}>
           <div style={{fontSize: 20, fontWeight: 300, color: theme === "Dark" ? "#dfdfdfff" : "#2d2d2dff"}}>
-            {businessSettings?.business_name || 'LB'}
+            {businessSettings?.business_name}
           </div>
           {businessSettings?.tagline && (
             <div style={{fontSize: 11, fontWeight: 300, color: theme === "Dark" ? "#dfdfdfff" : "#2d2d2dff"}}>
@@ -241,45 +241,9 @@ const [isOpen, setIsOpen] = useState(false);
                 <Post  postData={post} type="old-small" basePathUrl="/" />}
               </div>
             ))}
-            <BottomSheet isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        {/* <CircularMenu /> */}
+            
         
-              Все содержимое
-        <button
-          onClick={() => setIsOpen(false)}
-          style={{
-            marginTop: '32px',
-            width: '100%',
-            padding: '16px',
-            backgroundColor: '#2563eb',
-            color: '#ffffff',
-            borderRadius: '16px',
-            fontSize: '17px',
-            fontWeight: '600',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          Закрыть
-        </button>
-      </BottomSheet>
-         <button
-        onClick={() => setIsOpen(true)}
-        style={{
-          paddingLeft: '24px',
-          paddingRight: '24px',
-          paddingTop: '12px',
-          paddingBottom: '12px',
-          backgroundColor: '#2563eb',
-          color: '#ffffff',
-          borderRadius: '16px',
-          fontSize: '16px',
-          fontWeight: '600',
-          border: 'none',
-          cursor: 'pointer',
-        }}
-      >
-        Тестова кнопочка
-      </button>
           </>
           
           :

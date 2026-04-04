@@ -394,7 +394,15 @@ const SocketProvider = ({ children }) => {
                               (Array.isArray(filters) && filters.length > 0 && 
                                filters.some(f => f && typeof f === 'object' && f.category === "Подарки")));
         
-        if (bId && cards && !isGiftRequest) {
+        // Проверяем, не является ли это запросом одной карточки (фильтр по _id или id)
+        // Такие запросы не должны обновлять общий список businessCards
+        const isSingleCardRequest = filters && 
+                                   ((typeof filters === 'object' && (filters._id || filters.id)) ||
+                                    (Array.isArray(filters) && filters.length > 0 && 
+                                     filters.some(f => f && typeof f === 'object' && (f._id || f.id))));
+        
+        // Обновляем businessCards только если это НЕ запрос подарков и НЕ запрос одной карточки
+        if (bId && cards && !isGiftRequest && !isSingleCardRequest) {
           setBusinessCards(cards);
           setBusinessCardsLoaded(true);
           // НЕ сохраняем в localStorage - используем динамический подход
@@ -408,6 +416,7 @@ const SocketProvider = ({ children }) => {
             console.log("Business gifts сохранены в контекст для бизнеса:", bId, cards.length, "подарков");
           }
         }
+        // Для запроса одной карточки (isSingleCardRequest) ничего не делаем - не обновляем businessCards
       }
     }
     

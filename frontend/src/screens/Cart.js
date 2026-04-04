@@ -312,21 +312,30 @@ function Cart() {
         setTotal(getTotal());
     }, [cartItems])
     const handleSubmit = (values) => {
-        sendMessage(JSON.stringify(["order", "new", {...values, items: cartItems}]));
+        sendMessage(JSON.stringify(["order", "new", {...values, items: cartItems, business_id: businessId}]));
     }
     useEffect(() => {
+        console.log("Cart.js: useEffect sended запущен, sended =", sended);
         if (sended) {
-            setTimeout(() => {
+            console.log("Cart.js: sended = true, устанавливаем таймер на 6 секунд");
+            const timer = setTimeout(() => {
+                console.log("Cart.js: таймер сработал, очищаем корзину и редирект");
                 setSended(false);
                 setCartItems([]);
                 navigate(`/${businessId}`, { replace: true });
-            }, 6000)
+            }, 6000);
+            return () => {
+                console.log("Cart.js: очистка таймера");
+                clearTimeout(timer);
+            };
         }
     }, [sended])
     useEffect(() => {
         if (message) {
+          console.log("Cart.js получил сообщение:", message);
           if (message[0] === 'order') {
             if (message[1] === 'new') {
+                console.log("Cart.js: установка sended в true");
                 setSended(true);
             }
           }
@@ -507,11 +516,15 @@ function Cart() {
                     )}
                     </Formik>  
                 </div>
-                {sended && <SendedHover handleClose={() => {
-                                    setSended(false);
-                setCartItems([]);
-                navigate(`/${businessId}`, { replace: true });
-                }}/>}
+                {sended && (() => {
+                    console.log("Cart.js: рендерим SendedHover, businessId =", businessId, "sended =", sended);
+                    return <SendedHover handleClose={() => {
+                        console.log("Cart.js: закрытие SendedHover");
+                        setSended(false);
+                        setCartItems([]);
+                        navigate(`/${businessId}`, { replace: true });
+                    }}/>
+                })()}
             </div>
         );
     } else {

@@ -1,4 +1,3 @@
-import { useSpringRef, animated, useSpring } from '@react-spring/web';
 import { useMainContext } from '../context';
 
 function SendedHover({ handleClose }) {
@@ -7,16 +6,8 @@ function SendedHover({ handleClose }) {
   const textPrimary = theme === "Dark" ? "#FFFFFF" : "#000000";
   const elementBg = theme === "Dark" ? "rgb(24, 24, 26)" : "rgb(230, 230, 235)";
   
-  const api = useSpringRef();
-  const props = useSpring({
-    ref: api,
-    from: { opacity: 0, transform: "translateY(20px)" },
-    to: { opacity: 1, transform: "translateY(0px)" },
-    config: { duration: 300 }
-  });
-
   return (
-    <animated.div style={{
+    <div style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -26,10 +17,9 @@ function SendedHover({ handleClose }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 10000,
-      ...props
+      zIndex: 99999,
     }}>
-      <animated.div style={{
+      <div style={{
         backgroundColor: elementBg,
         borderRadius: 12,
         padding: '20px',
@@ -44,7 +34,10 @@ function SendedHover({ handleClose }) {
           Спасибо за ваш заказ. Мы свяжемся с вами в ближайшее время.
         </div>
         <button 
-          onClick={handleClose}
+          onClick={() => {
+            console.log("SendedHover: кнопка закрытия нажата");
+            handleClose();
+          }}
           style={{
             backgroundColor: theme === "Dark" ? "#2C2C2E" : "#C6C6C8",
             color: textPrimary,
@@ -59,8 +52,8 @@ function SendedHover({ handleClose }) {
         >
           Закрыть
         </button>
-      </animated.div>
-    </animated.div>
+      </div>
+    </div>
   );
 }
 
